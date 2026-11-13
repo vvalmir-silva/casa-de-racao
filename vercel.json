@@ -1,3 +1,12 @@
 {
-  "crons": [{ "path": "/api/cron/assinaturas", "schedule": "0 9 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/assinaturas",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/recompra",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }

@@ -5,11 +5,13 @@ import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { cancelarPedido, ErroPedido, enderecoSchema } from "@/lib/pedidos";
 import { partesLocais, somarDias } from "@/lib/frete";
+import { notificarPedido } from "@/lib/whatsapp";
 
 export async function cancelarMeuPedido(id: string) {
   const s = await exigirSessao();
   try {
     await cancelarPedido(id, s.id, false);
+    await notificarPedido(id, "cancelado").catch(() => {});
   } catch (e) {
     return { erro: e instanceof ErroPedido ? e.message : "Erro ao cancelar." };
   }
@@ -60,4 +62,10 @@ export async function alternarAssinatura(id: string, ativa: boolean) {
   const s = await exigirSessao();
   await sql`UPDATE assinaturas SET ativa = ${ativa} WHERE id = ${id} AND cliente_id = ${s.id}`;
   revalidatePath("/conta/assinaturas");
+}
+
+export async function alternarLembretes(ativo: boolean) {
+  const s = await exigirSessao();
+  await sql`UPDATE usuarios SET aceita_lembretes = ${ativo} WHERE id = ${s.id}`;
+  revalidatePath("/conta");
 }

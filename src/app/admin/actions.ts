@@ -7,6 +7,7 @@ import { sql } from "@/lib/db";
 import { comTransacao } from "@/lib/pool";
 import { cancelarPedido, ErroPedido } from "@/lib/pedidos";
 import { slugify } from "@/lib/utils";
+import { notificarPedido } from "@/lib/whatsapp";
 
 type R = { ok?: true; erro?: string };
 
@@ -20,6 +21,7 @@ const produtoSchema = z.object({
   peso_kg: z.coerce.number().min(0),
   preco: z.string().transform((v) => Math.round(Number(v.replace(/\./g, "").replace(",", ".")) * 100)).refine((n) => Number.isFinite(n) && n >= 0, "Preço inválido"),
   imagem_url: z.string().trim().url().optional().or(z.literal("")),
+  duracao_dias: z.string().optional().transform((v) => (v && Number(v) > 0 ? Math.round(Number(v)) : null)),
   ativo: z.coerce.boolean().optional(),
   destaque: z.coerce.boolean().optional(),
 });
@@ -34,14 +36,14 @@ export async function salvarProduto(fd: FormData): Promise<R> {
   if (p.id) {
     await sql`
       UPDATE produtos SET categoria_id=${p.categoria_id}, nome=${p.nome}, marca=${p.marca || null}, descricao=${p.descricao || null},
-        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${p.imagem_url || null}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
+        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${p.imagem_url || null}, duracao_dias=${p.duracao_dias}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
       WHERE id=${p.id}`;
   } else {
     const ex = await sql`SELECT 1 FROM produtos WHERE slug = ${slug}`;
     const s = ex.length ? `${slug}-${Date.now().toString(36)}` : slug;
     await sql`
-      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, ativo, destaque, estoque)
-      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${p.imagem_url || null}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
+      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, duracao_dias, ativo, destaque, estoque)
+      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${p.imagem_url || null}, ${p.duracao_dias}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
   }
   revalidatePath("/admin/produtos"); revalidatePath("/");
   return { ok: true };
@@ -93,6 +95,8 @@ export async function mudarStatusPedido(id: string, novo: string): Promise<R> {
   } else {
     await sql`UPDATE pedidos SET status = ${novo}, entregue_em = CASE WHEN ${novo} = 'entregue' THEN now() ELSE entregue_em END WHERE id = ${id}`;
   }
+  const evento = ({ pago: "pagamento_confirmado", separado: "separado", em_rota: "em_rota", entregue: "entregue", cancelado: "cancelado" } as const)[novo as "pago"];
+  if (evento) await notificarPedido(id, evento).catch(() => {});
   revalidatePath("/admin/pedidos"); revalidatePath("/admin/rotas"); revalidatePath("/motorista");
   return { ok: true };
 }
@@ -224,6 +228,7 @@ export async function excluirJanela(id: number): Promise<R> {
 const chavesPermitidas = new Set([
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
+  "recompra_dias_antes","whatsapp_notificacoes","pix_expiracao_minutos",
 ]);
 
 export async function salvarConfig(fd: FormData): Promise<R> {
@@ -232,10 +237,11 @@ export async function salvarConfig(fd: FormData): Promise<R> {
     if (!chavesPermitidas.has(k)) continue;
     let val = String(v).trim();
     if (k.endsWith("_centavos")) val = String(Math.round(Number(val.replace(",", ".")) * 100));
-    if (k === "expresso_ativo") val = val === "on" ? "true" : "false";
+    if (k === "expresso_ativo" || k === "whatsapp_notificacoes") val = val === "on" ? "true" : "false";
     await sql`INSERT INTO configuracoes (chave, valor) VALUES (${k}, ${val}) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor`;
   }
   if (!fd.has("expresso_ativo")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'expresso_ativo'`;
+  if (!fd.has("whatsapp_notificacoes")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'whatsapp_notificacoes'`;
   revalidatePath("/admin/config"); revalidatePath("/");
   return { ok: true };
 }
@@ -262,4 +268,15 @@ export async function salvarUsuario(fd: FormData): Promise<R> {
   }
   revalidatePath("/admin/usuarios");
   return { ok: true };
+}
+
+/* ---------- WhatsApp ---------- */
+export async function testarWhatsApp(fd: FormData): Promise<R> {
+  await exigirSessao(["admin"]);
+  const { enviarWhatsApp } = await import("@/lib/whatsapp");
+  const tel = String(fd.get("telefone") ?? "").replace(/\D/g, "");
+  if (tel.length < 10) return { erro: "Telefone inválido" };
+  const r = await enviarWhatsApp({ telefone: tel, texto: "Teste de notificação da Casa de Ração ✅", tipo: "teste" });
+  revalidatePath("/admin/notificacoes");
+  return r.ok ? { ok: true } : { erro: r.erro ?? "Falha no envio" };
 }

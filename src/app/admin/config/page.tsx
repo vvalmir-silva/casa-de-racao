@@ -31,6 +31,11 @@ export default async function ConfigAdmin() {
         <div><label className="label">Taxa (R$)</label><input name="expresso_taxa_centavos" className="input" defaultValue={reais(c, "expresso_taxa_centavos")} /></div>
         <div><label className="label">Peso máximo (kg)</label><input name="expresso_peso_max_kg" className="input" defaultValue={c.expresso_peso_max_kg} /></div>
         <div><label className="label">Prazo (horas)</label><input name="expresso_prazo_horas" className="input" defaultValue={c.expresso_prazo_horas} /></div>
+        <h2 className="col-span-full mt-2 font-semibold">WhatsApp e PIX</h2>
+        <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="whatsapp_notificacoes" defaultChecked={(c.whatsapp_notificacoes ?? "true") === "true"} /> Enviar notificações automáticas por WhatsApp</label>
+        <div><label className="label">Lembrete de recompra (dias antes de acabar)</label><input name="recompra_dias_antes" className="input" defaultValue={c.recompra_dias_antes ?? "3"} /></div>
+        <div><label className="label">Validade do PIX (minutos)</label><input name="pix_expiracao_minutos" className="input" defaultValue={c.pix_expiracao_minutos ?? "60"} /></div>
+        <p className="col-span-full text-xs text-stone-500">Provedor de WhatsApp e token do Mercado Pago ficam nas variáveis de ambiente (ver README). Status em Admin → Notificações.</p>
         <div className="col-span-full"><button className="btn-primary">Salvar</button></div>
       </FormAction>
     </div>

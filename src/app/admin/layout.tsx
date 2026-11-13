@@ -8,6 +8,7 @@ const itens = [
   ["/admin/produtos", "Produtos"],
   ["/admin/entregas", "Zonas e janelas"],
   ["/admin/usuarios", "Usuários"],
+  ["/admin/notificacoes", "Notificações"],
   ["/admin/config", "Configurações"],
 ];
 

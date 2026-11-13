@@ -3,7 +3,7 @@ import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, mascaraCep } from "@/lib/utils";
 import { logoutAction } from "../login/actions";
-import { EnderecoForm, ExcluirEnderecoBotao } from "./ContaClient";
+import { EnderecoForm, ExcluirEnderecoBotao, LembretesToggle } from "./ContaClient";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export default async function ContaPage() {
   const enderecos = (await sql`
     SELECT id, apelido, cep, logradouro, numero, complemento, bairro FROM enderecos WHERE usuario_id = ${s.id} ORDER BY padrao DESC, criado_em
   `) as { id: string; apelido: string; cep: string; logradouro: string; numero: string; complemento: string | null; bairro: string }[];
+  const [me] = (await sql`SELECT aceita_lembretes FROM usuarios WHERE id = ${s.id}`) as { aceita_lembretes: boolean }[];
 
   return (
     <div className="space-y-6">
@@ -60,6 +61,11 @@ export default async function ContaPage() {
           ))}
         </div>
         <EnderecoForm />
+      </section>
+
+      <section className="card flex items-center justify-between text-sm">
+        <div><b>Lembrete de recompra</b><div className="text-xs text-stone-500">Avisamos no WhatsApp quando a ração estiver acabando.</div></div>
+        <LembretesToggle ativo={me?.aceita_lembretes ?? true} />
       </section>
     </div>
   );

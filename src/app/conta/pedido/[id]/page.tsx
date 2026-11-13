@@ -4,6 +4,7 @@ import { sql, getConfig } from "@/lib/db";
 import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep } from "@/lib/utils";
 import { CancelarPedidoBotao } from "../../ContaClient";
 import { hm } from "@/lib/frete";
+import { PixBox } from "@/components/PixBox";
 
 export const dynamic = "force-dynamic";
 
@@ -37,12 +38,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
       </div>
 
       {p.status === "aguardando_pagamento" && p.forma_pagamento === "pix" && (
-        <div className="card space-y-2 border-brand-200 bg-brand-50">
-          <div className="font-semibold">Pague via PIX para confirmar</div>
-          <div className="text-sm">Chave: <b className="select-all">{cfg.pix_chave}</b></div>
-          <div className="text-sm">Valor: <b>{brl(p.total_centavos)}</b></div>
-          {wa && <a href={wa} target="_blank" className="btn-primary w-full">Enviar comprovante no WhatsApp</a>}
-        </div>
+        <PixBox pedidoId={p.id} total={p.total_centavos} chaveManual={cfg.pix_chave ?? ""} whatsappLink={wa} />
       )}
 
       <div className="card space-y-1 text-sm">

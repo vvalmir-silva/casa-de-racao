@@ -30,6 +30,18 @@ Acessos iniciais (troque em **Admin → Usuários**):
 3. O `vercel.json` já agenda o cron de assinaturas (`/api/cron/assinaturas`, diário às 09:00 UTC = 06:00 BRT).
 4. Node 22 (padrão da Vercel) — necessário para o `Pool` WebSocket do Neon.
 
+## Integrações (opcionais, via variáveis de ambiente)
+
+| Recurso | Variáveis | Sem configurar |
+|---|---|---|
+| WhatsApp automático (pedido, pagamento, saiu p/ entrega, entregue, lembrete de recompra) | `WHATSAPP_PROVIDER=evolution` + `WHATSAPP_API_URL/KEY/INSTANCE`, ou `=zapi` + `ZAPI_INSTANCE/TOKEN/CLIENT_TOKEN` | Mensagens ficam registradas em Admin → Notificações como "desativado" |
+| PIX automático com QR Code e confirmação | `MP_ACCESS_TOKEN` (Mercado Pago) e, opcional, `MP_WEBHOOK_SECRET`. Cadastre o webhook `https://SEU-DOMINIO/api/webhooks/mercadopago` (evento *Pagamentos*) | Cliente vê a chave PIX manual e o admin confirma |
+| Links nas mensagens | `NEXT_PUBLIC_SITE_URL` | Sem link |
+
+**Migrações:** novas alterações de banco ficam em `db/migrations/*.sql`. Aplique com `npm run db:migrate` ou acessando `/api/admin/migrar` logado como admin.
+
+**Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
+
 ## Como funciona a entrega
 
 - **Zonas** = conjuntos de prefixos de CEP (5 dígitos) com taxa e dias da semana de entrega.

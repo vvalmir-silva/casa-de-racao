@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { mascaraCep, limparCep } from "@/lib/utils";
-import { salvarEndereco, excluirEndereco, cancelarMeuPedido } from "./actions";
+import { salvarEndereco, excluirEndereco, cancelarMeuPedido, alternarLembretes } from "./actions";
 
 export function ExcluirEnderecoBotao({ id }: { id: string }) {
   const [p, start] = useTransition();
@@ -70,5 +70,15 @@ export function CancelarPedidoBotao({ id }: { id: string }) {
       }}>Cancelar pedido</button>
       {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
     </div>
+  );
+}
+
+export function LembretesToggle({ ativo }: { ativo: boolean }) {
+  const [p, start] = useTransition();
+  const router = useRouter();
+  return (
+    <button className={ativo ? "btn-outline" : "btn-primary"} disabled={p} onClick={() => start(async () => { await alternarLembretes(!ativo); router.refresh(); })}>
+      {ativo ? "Desativar" : "Ativar"}
+    </button>
   );
 }

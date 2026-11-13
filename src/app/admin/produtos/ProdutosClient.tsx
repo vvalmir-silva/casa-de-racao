@@ -17,6 +17,7 @@ export function ProdutoForm({ produto, categorias }: { produto: Prod | null; cat
       <div><label className="label">Categoria</label><select name="categoria_id" className="input" defaultValue={produto?.categoria_id}>{categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</select></div>
       <div><label className="label">Peso (kg)</label><input name="peso_kg" className="input" inputMode="decimal" defaultValue={produto ? Number(produto.peso_kg) : ""} required /></div>
       <div><label className="label">Preço (R$)</label><input name="preco" className="input" inputMode="decimal" defaultValue={produto ? (produto.preco_centavos / 100).toFixed(2).replace(".", ",") : ""} required /></div>
+      <div><label className="label">Dura (dias) · lembrete</label><input name="duracao_dias" className="input" inputMode="numeric" defaultValue={produto?.duracao_dias ?? ""} placeholder="ex.: 30" /></div>
       <div className="col-span-2"><label className="label">URL da imagem</label><input name="imagem_url" className="input" defaultValue={produto?.imagem_url ?? ""} placeholder="https://..." /></div>
       <div className="col-span-full"><label className="label">Descrição</label><textarea name="descricao" className="input" rows={2} defaultValue={produto?.descricao ?? ""} /></div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="ativo" defaultChecked={produto?.ativo ?? true} /> Ativo</label>
