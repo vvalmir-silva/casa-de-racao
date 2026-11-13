@@ -86,7 +86,7 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
               <span className={`badge ${r.status === "concluida" ? "bg-green-100 text-green-800" : r.status === "em_andamento" ? "bg-purple-100 text-purple-800" : "bg-stone-100"}`}>{r.status.replace("_", " ")}</span>
               <span className="text-sm text-stone-500">{r.entregues}/{r.qtd} entregues</span>
               <a href={maps} target="_blank" className="btn-outline ml-auto py-1.5">Abrir no Maps</a>
-              {r.status === "planejada" && <BotaoAction className="btn-outline py-1.5 text-red-700" action={() => excluirRota(r.id)} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
+              {r.status === "planejada" && <BotaoAction className="btn-outline py-1.5 text-red-700" action={excluirRota} args={[r.id]} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
             </div>
             <FormAction action={atualizarRota} className="flex gap-2">
               <input type="hidden" name="rota_id" value={r.id} />
@@ -99,7 +99,7 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
                   <span className="grid h-6 w-6 place-items-center rounded-full bg-stone-900 text-xs text-white">{p.ordem_rota}</span>
                   <span className="flex-1">#{p.numero} {p.cliente} · {p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro}</span>
                   <span className="badge bg-stone-100">{p.status}</span>
-                  {p.status !== "entregue" && r.status === "planejada" && <BotaoAction className="text-xs text-red-600" action={() => removerDaRota(p.id)}>remover</BotaoAction>}
+                  {p.status !== "entregue" && r.status === "planejada" && <BotaoAction className="text-xs text-red-600" action={removerDaRota} args={[p.id]}>remover</BotaoAction>}
                 </li>
               ))}
             </ol>

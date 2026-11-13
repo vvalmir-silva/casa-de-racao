@@ -21,14 +21,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   `) as ProdutoResumo[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <CepBanner />
       <form className="flex gap-2">
-        <input name="q" defaultValue={q} placeholder="Buscar ração, marca..." className="input" />
+        <input name="q" defaultValue={q} placeholder="Buscar ração, marca..." className="input" enterKeyHint="search" />
         {cat && <input type="hidden" name="cat" value={cat} />}
-        <button className="btn-primary">Buscar</button>
+        <button className="btn-primary shrink-0">Buscar</button>
       </form>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
         <Link href="/" className={`badge whitespace-nowrap px-3 py-1.5 ${!cat ? "bg-brand-600 text-white" : "bg-white border"}`}>Todos</Link>
         {categorias.map((c) => (
           <Link
@@ -43,7 +43,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       {produtos.length === 0 ? (
         <p className="py-12 text-center text-stone-500">Nenhum produto encontrado.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           {produtos.map((p) => <ProdutoCard key={p.id} p={p} />)}
         </div>
       )}

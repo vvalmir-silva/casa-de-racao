@@ -34,16 +34,16 @@ export default async function NotificacoesAdmin() {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="table">
+        <table className="table table-cards">
           <thead><tr><th>Quando</th><th>Pedido</th><th>Para</th><th>Tipo</th><th>Status</th><th>Mensagem</th></tr></thead>
           <tbody>
             {lista.map((n) => (
               <tr key={n.id}>
-                <td className="whitespace-nowrap">{dataHoraBR(n.criado_em)}</td>
-                <td>{n.numero ? `#${n.numero}` : "—"}</td>
-                <td className="whitespace-nowrap">{mascaraTelefone(n.telefone.replace(/^55/, ""))}</td>
-                <td>{n.tipo}</td>
-                <td><span className={`badge ${cor[n.status] ?? ""}`}>{n.status}</span>{n.erro && <div className="max-w-[200px] truncate text-xs text-red-600" title={n.erro}>{n.erro}</div>}</td>
+                <td data-label="Quando" className="whitespace-nowrap">{dataHoraBR(n.criado_em)}</td>
+                <td data-label="Pedido">{n.numero ? `#${n.numero}` : "—"}</td>
+                <td data-label="Para" className="whitespace-nowrap">{mascaraTelefone(n.telefone.replace(/^55/, ""))}</td>
+                <td data-label="Tipo">{n.tipo}</td>
+                <td data-label="Status"><span className={`badge ${cor[n.status] ?? ""}`}>{n.status}</span>{n.erro && <div className="max-w-[200px] truncate text-xs text-red-600" title={n.erro}>{n.erro}</div>}</td>
                 <td className="max-w-[320px] whitespace-pre-line text-xs text-stone-600">{n.mensagem}</td>
               </tr>
             ))}

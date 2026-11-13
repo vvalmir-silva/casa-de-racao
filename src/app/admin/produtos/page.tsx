@@ -24,16 +24,16 @@ export default async function ProdutosAdmin({ searchParams }: { searchParams: Pr
       </div>
       {(editar === "novo" || emEdicao) && <ProdutoForm produto={emEdicao} categorias={categorias} />}
       <div className="overflow-x-auto">
-        <table className="table">
+        <table className="table table-cards">
           <thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ajuste</th><th></th></tr></thead>
           <tbody>
             {produtos.map((p) => (
               <tr key={p.id} className={p.ativo ? "" : "opacity-50"}>
-                <td><div className="font-medium">{p.nome}</div><div className="text-xs text-stone-500">{p.marca} · {Number(p.peso_kg)} kg{p.destaque ? " · ★" : ""}</div></td>
-                <td>{p.categoria}</td>
-                <td>{brl(p.preco_centavos)}</td>
-                <td><span className={`badge ${p.estoque <= 3 ? "bg-red-100 text-red-700" : "bg-stone-100"}`}>{p.estoque}</span></td>
-                <td><EstoqueAjuste id={p.id} /></td>
+                <td data-label="Produto"><div className="font-medium">{p.nome}</div><div className="text-xs text-stone-500">{p.marca} · {Number(p.peso_kg)} kg{p.destaque ? " · ★" : ""}</div></td>
+                <td data-label="Categoria">{p.categoria}</td>
+                <td data-label="Preço">{brl(p.preco_centavos)}</td>
+                <td data-label="Estoque"><span className={`badge ${p.estoque <= 3 ? "bg-red-100 text-red-700" : "bg-stone-100"}`}>{p.estoque}</span></td>
+                <td data-label="Ajuste"><EstoqueAjuste id={p.id} /></td>
                 <td><a href={`/admin/produtos?editar=${p.id}`} className="text-brand-700 underline">editar</a></td>
               </tr>
             ))}

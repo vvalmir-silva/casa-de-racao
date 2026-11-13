@@ -40,7 +40,7 @@ export default async function EntregasAdmin() {
             <div className="col-span-full"><label className="label">Prefixos de CEP (separe por vírgula ou espaço)</label><textarea name="prefixos" className="input font-mono text-xs" rows={2} defaultValue={z.prefixos ?? ""} /></div>
             <div className="col-span-full flex gap-2">
               <button className="btn-primary">Salvar zona</button>
-              {z.ativa && <BotaoAction className="btn-outline text-red-700" action={() => excluirZona(z.id)} confirmar="Desativar zona?">Desativar</BotaoAction>}
+              {z.ativa && <BotaoAction className="btn-outline text-red-700" action={excluirZona} args={[z.id]} confirmar="Desativar zona?">Desativar</BotaoAction>}
             </div>
           </FormAction>
 
@@ -54,7 +54,7 @@ export default async function EntregasAdmin() {
                   <div><label className="label">Início</label><input type="time" name="inicio" className="input py-1" defaultValue={j.inicio.slice(0, 5)} /></div>
                   <div><label className="label">Fim</label><input type="time" name="fim" className="input py-1" defaultValue={j.fim.slice(0, 5)} /></div>
                   <button className="btn-outline py-1.5">Salvar</button>
-                  <BotaoAction className="text-xs text-red-600" action={() => excluirJanela(j.id)}>remover</BotaoAction>
+                  <BotaoAction className="text-xs text-red-600" action={excluirJanela} args={[j.id]}>remover</BotaoAction>
                 </FormAction>
               ))}
               <FormAction action={salvarJanela} className="flex flex-wrap items-end gap-2 text-sm">

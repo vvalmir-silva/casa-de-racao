@@ -28,14 +28,14 @@ export function CepBanner() {
 
   const rota = r?.opcoes.find((o) => o.tipo === "rota");
   return (
-    <div className="card flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="card flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="text-sm font-medium">Entregamos no seu bairro?</div>
       <form
         className="flex gap-2"
         onSubmit={(e) => { e.preventDefault(); consultar(cep); }}
       >
-        <input value={cep} onChange={(e) => setCep(mascaraCep(e.target.value))} placeholder="CEP" inputMode="numeric" className="input w-32" />
-        <button className="btn-outline" disabled={loading}>{loading ? "..." : "Ver"}</button>
+        <input value={cep} onChange={(e) => setCep(mascaraCep(e.target.value))} placeholder="Seu CEP" inputMode="numeric" className="input flex-1 sm:w-36 sm:flex-none" />
+        <button className="btn-outline shrink-0" disabled={loading}>{loading ? "..." : "Ver"}</button>
       </form>
       {r && (
         <div className="text-sm">

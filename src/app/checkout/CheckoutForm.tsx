@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useCarrinho } from "@/lib/carrinho";
 import { brl, limparCep, mascaraCep } from "@/lib/utils";
@@ -32,6 +32,13 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const [cupomInput, setCupomInput] = useState("");
   const [cupom, setCupom] = useState<{ codigo: string; descricao: string | null; desconto_centavos: number; frete_gratis: boolean } | null>(null);
   const [cupomErro, setCupomErro] = useState("");
+  const concluido = useRef(false);
+  const escolhaManual = useRef(false);
+
+  // carrinho vazio (e não foi um pedido recém-concluído) → volta pro carrinho
+  useEffect(() => {
+    if (pronto && itens.length === 0 && !concluido.current) router.replace("/carrinho");
+  }, [pronto, itens.length, router]);
 
   const cepAtual = enderecoId === "novo" ? limparCep(novo.cep) : enderecos.find((e) => e.id === enderecoId)?.cep ?? "";
 
@@ -53,7 +60,11 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
     const url = c.length === 8 ? `/api/frete?cep=${c}&subtotal=${subtotal}&peso=${peso}` : `/api/frete?cep=&subtotal=${subtotal}&peso=${peso}`;
     fetch(url).then((r) => r.json()).then((f: Frete) => {
       setFrete(f);
-      setEscolha((e) => (f.opcoes.some((o) => chave(o) === e) ? e : chave(f.opcoes.find((o) => o.tipo === "rota") ?? f.opcoes[0])));
+      setEscolha((e) => {
+        const padrao = chave(f.opcoes.find((o) => o.tipo === "rota") ?? f.opcoes[0]);
+        if (!escolhaManual.current) return padrao;
+        return f.opcoes.some((o) => chave(o) === e) ? e : padrao;
+      });
     }).finally(() => setCarregandoFrete(false));
   }, [cepAtual, subtotal, peso, pronto]);
 
@@ -72,8 +83,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   }
   const faltaGratis = freteGratisMinimo - subtotal;
 
-  if (!pronto) return null;
-  if (itens.length === 0) { router.replace("/carrinho"); return null; }
+  if (!pronto || itens.length === 0) return null;
 
   function enviar() {
     setErro("");
@@ -93,8 +103,9 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
     start(async () => {
       const r = await finalizarPedidoAction(payload);
       if (!r.ok) return setErro(r.erro);
-      limpar();
+      concluido.current = true;
       router.push(`/conta/pedido/${r.id}?novo=1`);
+      limpar();
     });
   }
 
@@ -150,7 +161,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           <div className="space-y-2">
             {frete?.opcoes.map((o) => (
               <label key={chave(o)} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${escolha === chave(o) ? "border-brand-500 bg-brand-50" : "border-stone-200"}`}>
-                <input type="radio" name="ent" checked={escolha === chave(o)} onChange={() => setEscolha(chave(o))} className="mt-1" />
+                <input type="radio" name="ent" checked={escolha === chave(o)} onChange={() => { escolhaManual.current = true; setEscolha(chave(o)); }} className="mt-1" />
                 <div className="flex-1">
                   <div className="font-medium">{o.titulo}</div>
                   <div className="text-xs text-stone-500">{o.tipo === "retirada" ? lojaEndereco : o.descricao}</div>
@@ -209,10 +220,22 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           <div className="mt-1 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
         </div>
         {erro && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{erro}</p>}
-        <button className="btn-primary w-full" disabled={pending || !opcao || carregandoFrete} onClick={enviar}>
+        <button className="btn-primary hidden w-full md:flex" disabled={pending || !opcao || carregandoFrete} onClick={enviar}>
           {pending ? "Enviando..." : "Confirmar pedido"}
         </button>
       </aside>
+
+      {/* barra fixa no celular */}
+      <div className="fixed inset-x-0 bottom-16 z-20 border-t border-stone-200 bg-white p-3 md:hidden">
+        {erro && <p className="mb-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">{erro}</p>}
+        <div className="flex items-center gap-3">
+          <div><div className="text-xs text-stone-500">Total</div><div className="text-lg font-bold">{brl(total)}</div></div>
+          <button className="btn-primary flex-1" disabled={pending || !opcao || carregandoFrete} onClick={enviar}>
+            {pending ? "Enviando..." : "Confirmar pedido"}
+          </button>
+        </div>
+      </div>
+      <div className="h-20 md:hidden" />
     </div>
   );
 }

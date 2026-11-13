@@ -18,9 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await exigirSessao(["admin"]);
   return (
     <div className="grid gap-4 md:grid-cols-[200px_1fr]">
-      <nav className="flex gap-1 overflow-x-auto md:flex-col">
+      <nav className="no-scrollbar sticky top-14 z-20 -mx-3 flex gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-3 py-2 md:static md:mx-0 md:flex-col md:border-0 md:bg-transparent md:p-0">
         {itens.map(([href, label]) => (
-          <Link key={href} href={href} className="btn-ghost justify-start whitespace-nowrap">{label}</Link>
+          <Link key={href} href={href} className="btn-ghost shrink-0 justify-start whitespace-nowrap px-3 text-xs md:text-sm">{label}</Link>
         ))}
       </nav>
       <div className="min-w-0">{children}</div>

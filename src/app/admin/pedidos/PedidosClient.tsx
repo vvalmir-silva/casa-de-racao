@@ -16,7 +16,7 @@ export function StatusBotoes({ id, status }: { id: string; status: string }) {
   return (
     <div className="flex flex-wrap gap-2 pt-1">
       {lista.map(([novo, label, cls]) => (
-        <BotaoAction key={novo} className={`${cls} py-1.5`} action={() => mudarStatusPedido(id, novo)} confirmar={novo === "cancelado" ? "Cancelar o pedido e devolver o estoque?" : undefined}>
+        <BotaoAction key={novo} className={`${cls} py-1.5`} action={mudarStatusPedido} args={[id, novo]} confirmar={novo === "cancelado" ? "Cancelar o pedido e devolver o estoque?" : undefined}>
           {label}
         </BotaoAction>
       ))}

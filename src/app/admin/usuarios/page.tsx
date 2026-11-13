@@ -11,7 +11,7 @@ export default async function UsuariosAdmin({ searchParams }: { searchParams: Pr
   const { q, papel } = await searchParams;
   const busca = q ? `%${q}%` : null;
   const usuarios = (await sql`
-    SELECT u.id, u.nome, u.telefone, u.papel, u.ativo, u.criado_em, (SELECT count(*) FROM pedidos p WHERE p.cliente_id = u.id) AS pedidos
+    SELECT u.id, u.nome, u.telefone, u.papel, u.ativo, u.criado_em::date::text AS criado_em, (SELECT count(*) FROM pedidos p WHERE p.cliente_id = u.id) AS pedidos
     FROM usuarios u
     WHERE (${busca}::text IS NULL OR u.nome ILIKE ${busca} OR u.telefone ILIKE ${busca})
       AND (${papel ?? null}::text IS NULL OR u.papel = ${papel ?? null})
@@ -34,20 +34,20 @@ export default async function UsuariosAdmin({ searchParams }: { searchParams: Pr
         <button className="btn-primary">Criar</button>
       </FormAction>
       <div className="overflow-x-auto">
-        <table className="table">
+        <table className="table table-cards">
           <thead><tr><th>Nome</th><th>Telefone</th><th>Papel</th><th>Pedidos</th><th>Desde</th><th>Nova senha / status</th></tr></thead>
           <tbody>
             {usuarios.map((u) => (
               <tr key={u.id} className={u.ativo ? "" : "opacity-50"}>
-                <td>{u.nome}</td><td>{mascaraTelefone(u.telefone)}</td>
-                <td>
+                <td data-label="Nome">{u.nome}</td><td data-label="Telefone">{mascaraTelefone(u.telefone)}</td>
+                <td data-label="Papel">
                   <FormAction action={salvarUsuario} className="flex gap-1">
                     <input type="hidden" name="id" value={u.id} /><input type="hidden" name="nome" value={u.nome} /><input type="hidden" name="telefone" value={u.telefone} />
                     <select name="papel" defaultValue={u.papel} className="input py-1"><option value="cliente">cliente</option><option value="motorista">motorista</option><option value="admin">admin</option></select>
                     <button className="btn-outline py-1">ok</button>
                   </FormAction>
                 </td>
-                <td>{u.pedidos}</td><td>{dataBR(u.criado_em.slice(0, 10))}</td>
+                <td data-label="Pedidos">{u.pedidos}</td><td data-label="Desde">{dataBR(u.criado_em)}</td>
                 <td>
                   <FormAction action={salvarUsuario} className="flex gap-1">
                     <input type="hidden" name="id" value={u.id} /><input type="hidden" name="nome" value={u.nome} /><input type="hidden" name="telefone" value={u.telefone} /><input type="hidden" name="papel" value={u.papel} />

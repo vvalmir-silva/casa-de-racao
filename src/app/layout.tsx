@@ -17,8 +17,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen flex flex-col">
         <CarrinhoProvider>
           <Header sessao={sessao} />
-          <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
-          <footer className="border-t border-stone-200 py-6 text-center text-xs text-stone-500">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 pb-24 sm:px-4 sm:py-6 md:pb-6">{children}</main>
+          <footer className="hidden border-t border-stone-200 py-6 text-center text-xs text-stone-500 md:block">
             Casa de Ração · Entregamos no seu bairro
           </footer>
         </CarrinhoProvider>

@@ -34,20 +34,20 @@ export default async function CuponsAdmin({ searchParams }: { searchParams: Prom
         </FormAction>
       )}
       <div className="overflow-x-auto">
-        <table className="table">
+        <table className="table table-cards">
           <thead><tr><th>Código</th><th>Desconto</th><th>Mínimo</th><th>Usos</th><th>Validade</th><th>Regras</th><th></th></tr></thead>
           <tbody>
             {cupons.map((x) => (
               <tr key={x.id} className={x.ativo ? "" : "opacity-50"}>
-                <td><b>{x.codigo}</b><div className="text-xs text-stone-500">{x.descricao}</div></td>
-                <td>{x.tipo === "percentual" ? `${x.valor}%` : x.tipo === "fixo" ? brl(x.valor) : tipoLabel.frete_gratis}</td>
-                <td>{x.minimo_centavos ? brl(x.minimo_centavos) : "—"}</td>
-                <td>{x.usos}{x.limite_usos ? ` / ${x.limite_usos}` : ""}</td>
-                <td>{x.valido_ate ? dataBR(x.valido_ate) : "—"}</td>
+                <td data-label="Código"><b>{x.codigo}</b><div className="text-xs text-stone-500">{x.descricao}</div></td>
+                <td data-label="Desconto">{x.tipo === "percentual" ? `${x.valor}%` : x.tipo === "fixo" ? brl(x.valor) : tipoLabel.frete_gratis}</td>
+                <td data-label="Mínimo">{x.minimo_centavos ? brl(x.minimo_centavos) : "—"}</td>
+                <td data-label="Usos">{x.usos}{x.limite_usos ? ` / ${x.limite_usos}` : ""}</td>
+                <td data-label="Validade">{x.valido_ate ? dataBR(x.valido_ate) : "—"}</td>
                 <td className="text-xs">{x.primeira_compra ? "1ª compra" : ""}</td>
                 <td className="whitespace-nowrap">
                   <a href={`/admin/cupons?editar=${x.id}`} className="mr-2 text-brand-700 underline">editar</a>
-                  <BotaoAction className="text-xs underline" action={() => alternarCupom(x.id, !x.ativo)}>{x.ativo ? "desativar" : "ativar"}</BotaoAction>
+                  <BotaoAction className="text-xs underline" action={alternarCupom} args={[x.id, !x.ativo]}>{x.ativo ? "desativar" : "ativar"}</BotaoAction>
                 </td>
               </tr>
             ))}

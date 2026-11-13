@@ -14,6 +14,7 @@ cp .env.example .env        # preencha DATABASE_URL e SESSION_SECRET
 npm run db:schema            # cria as tabelas (idempotente)
 npm run db:seed              # dados iniciais (já aplicado no banco criado)
 npm run dev                  # http://localhost:3000
+# Postgres local em vez do Neon: DB_DRIVER=pg no .env
 ```
 
 Acessos iniciais (troque em **Admin → Usuários**):

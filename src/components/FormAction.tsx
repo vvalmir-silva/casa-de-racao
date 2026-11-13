@@ -34,9 +34,10 @@ export function FormAction({ action, children, className, onOk, confirmar }: {
   );
 }
 
-/** Botão que chama uma server action sem formulário. */
-export function BotaoAction({ action, children, className = "btn-outline", confirmar }: {
-  action: () => Promise<R>; children: ReactNode; className?: string; confirmar?: string;
+/** Botão que chama uma server action (referência + args serializáveis) sem formulário. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function BotaoAction<A extends any[]>({ action, args, children, className = "btn-outline", confirmar }: {
+  action: (...a: A) => Promise<R>; args: A; children: ReactNode; className?: string; confirmar?: string;
 }) {
   const [p, start] = useTransition();
   const router = useRouter();
@@ -46,7 +47,7 @@ export function BotaoAction({ action, children, className = "btn-outline", confi
       disabled={p}
       onClick={() => {
         if (confirmar && !confirm(confirmar)) return;
-        start(async () => { const r = await action(); if (r && "erro" in r && r.erro) alert(r.erro); router.refresh(); });
+        start(async () => { const r = await action(...args); if (r && "erro" in r && r.erro) alert(r.erro); router.refresh(); });
       }}
     >
       {children}

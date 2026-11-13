@@ -51,9 +51,12 @@ export const FORMA_PAGAMENTO: Record<string, string> = {
 
 export const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export function dataBR(iso: string | null | undefined) {
-  if (!iso) return "—";
-  const [y, m, d] = String(iso).slice(0, 10).split("-");
+export function dataBR(v: string | Date | null | undefined) {
+  if (!v) return "—";
+  if (v instanceof Date) {
+    return `${String(v.getDate()).padStart(2, "0")}/${String(v.getMonth() + 1).padStart(2, "0")}/${v.getFullYear()}`;
+  }
+  const [y, m, d] = String(v).slice(0, 10).split("-");
   return `${d}/${m}/${y}`;
 }
 
