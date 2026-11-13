@@ -22,6 +22,7 @@ const produtoSchema = z.object({
   preco: z.string().transform((v) => Math.round(Number(v.replace(/\./g, "").replace(",", ".")) * 100)).refine((n) => Number.isFinite(n) && n >= 0, "Preço inválido"),
   imagem_url: z.string().trim().url().optional().or(z.literal("")),
   duracao_dias: z.string().optional().transform((v) => (v && Number(v) > 0 ? Math.round(Number(v)) : null)),
+  custo: z.string().optional().transform((v) => (v && v.trim() ? Math.round(Number(v.replace(/\./g, "").replace(",", ".")) * 100) : null)),
   ativo: z.coerce.boolean().optional(),
   destaque: z.coerce.boolean().optional(),
 });
@@ -33,17 +34,29 @@ export async function salvarProduto(fd: FormData): Promise<R> {
   if (!parsed.success) return { erro: parsed.error.issues[0].message };
   const p = parsed.data;
   const slug = slugify(p.nome);
+  // upload de imagem (Vercel Blob) — opcional
+  const arquivo = fd.get("imagem_arquivo");
+  let imagemUrl = p.imagem_url || null;
+  if (arquivo instanceof File && arquivo.size > 0) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) return { erro: "Upload indisponível: defina BLOB_READ_WRITE_TOKEN (Vercel Blob) ou use a URL da imagem." };
+    if (arquivo.size > 4 * 1024 * 1024) return { erro: "Imagem até 4 MB." };
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(arquivo.type)) return { erro: "Formato aceito: JPG, PNG, WEBP ou GIF." };
+    const { put } = await import("@vercel/blob");
+    const ext = arquivo.type.split("/")[1].replace("jpeg", "jpg");
+    const blob = await put(`produtos/${slug}-${Date.now()}.${ext}`, arquivo, { access: "public", contentType: arquivo.type });
+    imagemUrl = blob.url;
+  }
   if (p.id) {
     await sql`
       UPDATE produtos SET categoria_id=${p.categoria_id}, nome=${p.nome}, marca=${p.marca || null}, descricao=${p.descricao || null},
-        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${p.imagem_url || null}, duracao_dias=${p.duracao_dias}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
+        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${imagemUrl}, duracao_dias=${p.duracao_dias}, custo_centavos=${p.custo}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
       WHERE id=${p.id}`;
   } else {
     const ex = await sql`SELECT 1 FROM produtos WHERE slug = ${slug}`;
     const s = ex.length ? `${slug}-${Date.now().toString(36)}` : slug;
     await sql`
-      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, duracao_dias, ativo, destaque, estoque)
-      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${p.imagem_url || null}, ${p.duracao_dias}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
+      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, duracao_dias, custo_centavos, ativo, destaque, estoque)
+      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${imagemUrl}, ${p.duracao_dias}, ${p.custo}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
   }
   revalidatePath("/admin/produtos"); revalidatePath("/");
   return { ok: true };
@@ -279,4 +292,41 @@ export async function testarWhatsApp(fd: FormData): Promise<R> {
   const r = await enviarWhatsApp({ telefone: tel, texto: "Teste de notificação da Casa de Ração ✅", tipo: "teste" });
   revalidatePath("/admin/notificacoes");
   return r.ok ? { ok: true } : { erro: r.erro ?? "Falha no envio" };
+}
+
+/* ---------- Cupons ---------- */
+export async function salvarCupom(fd: FormData): Promise<R> {
+  await exigirSessao(["admin"]);
+  const { normalizarCodigo } = await import("@/lib/cupons");
+  const id = Number(fd.get("id")) || null;
+  const codigo = normalizarCodigo(String(fd.get("codigo") ?? ""));
+  const descricao = String(fd.get("descricao") ?? "").trim() || null;
+  const tipo = String(fd.get("tipo") ?? "percentual");
+  const valorRaw = String(fd.get("valor") ?? "0").replace(",", ".");
+  const valor = tipo === "percentual" ? Math.round(Number(valorRaw)) : tipo === "fixo" ? Math.round(Number(valorRaw) * 100) : 0;
+  const minimo = Math.round(Number(String(fd.get("minimo") ?? "0").replace(",", ".")) * 100);
+  const primeira = fd.get("primeira_compra") === "on";
+  const limite = Number(fd.get("limite_usos")) || null;
+  const validoAte = String(fd.get("valido_ate") ?? "") || null;
+  const ativo = fd.get("ativo") === "on";
+  if (codigo.length < 3) return { erro: "Código com pelo menos 3 caracteres" };
+  if (!["percentual", "fixo", "frete_gratis"].includes(tipo)) return { erro: "Tipo inválido" };
+  if (tipo === "percentual" && (valor < 1 || valor > 100)) return { erro: "Percentual entre 1 e 100" };
+  if (tipo === "fixo" && valor < 1) return { erro: "Informe o valor do desconto" };
+  if (id) {
+    await sql`UPDATE cupons SET codigo=${codigo}, descricao=${descricao}, tipo=${tipo}, valor=${valor}, minimo_centavos=${minimo}, primeira_compra=${primeira}, limite_usos=${limite}, valido_ate=${validoAte}, ativo=${ativo} WHERE id=${id}`;
+  } else {
+    const ex = await sql`SELECT 1 FROM cupons WHERE codigo = ${codigo}`;
+    if (ex.length) return { erro: "Já existe cupom com esse código" };
+    await sql`INSERT INTO cupons (codigo, descricao, tipo, valor, minimo_centavos, primeira_compra, limite_usos, valido_ate, ativo) VALUES (${codigo}, ${descricao}, ${tipo}, ${valor}, ${minimo}, ${primeira}, ${limite}, ${validoAte}, ${ativo})`;
+  }
+  revalidatePath("/admin/cupons");
+  return { ok: true };
+}
+
+export async function alternarCupom(id: number, ativo: boolean): Promise<R> {
+  await exigirSessao(["admin"]);
+  await sql`UPDATE cupons SET ativo = ${ativo} WHERE id = ${id}`;
+  revalidatePath("/admin/cupons");
+  return { ok: true };
 }

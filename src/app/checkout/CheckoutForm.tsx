@@ -29,6 +29,9 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState("");
   const [pending, start] = useTransition();
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupom, setCupom] = useState<{ codigo: string; descricao: string | null; desconto_centavos: number; frete_gratis: boolean } | null>(null);
+  const [cupomErro, setCupomErro] = useState("");
 
   const cepAtual = enderecoId === "novo" ? limparCep(novo.cep) : enderecos.find((e) => e.id === enderecoId)?.cep ?? "";
 
@@ -55,7 +58,18 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   }, [cepAtual, subtotal, peso, pronto]);
 
   const opcao = useMemo(() => frete?.opcoes.find((o) => chave(o) === escolha) ?? null, [frete, escolha]);
-  const total = subtotal + (opcao?.taxa_centavos ?? 0);
+  const freteBase = opcao?.taxa_centavos ?? 0;
+  const freteFinal = cupom?.frete_gratis ? 0 : freteBase;
+  const desconto = cupom && !cupom.frete_gratis ? cupom.desconto_centavos : 0;
+  const total = Math.max(0, subtotal + freteFinal - desconto);
+
+  async function aplicarCupom() {
+    setCupomErro("");
+    const r = await fetch(`/api/cupom?codigo=${encodeURIComponent(cupomInput)}&subtotal=${subtotal}&frete=${freteBase}`);
+    const j = await r.json();
+    if (!r.ok) { setCupom(null); return setCupomErro(j.erro ?? "Cupom inválido"); }
+    setCupom(j);
+  }
   const faltaGratis = freteGratisMinimo - subtotal;
 
   if (!pronto) return null;
@@ -74,6 +88,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
       forma_pagamento: pagamento,
       troco_para_centavos: pagamento === "dinheiro" && troco ? Math.round(Number(troco.replace(",", ".")) * 100) : null,
       observacoes: obs,
+      cupom: cupom?.codigo ?? "",
     };
     start(async () => {
       const r = await finalizarPedidoAction(payload);
@@ -173,9 +188,24 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
             <li key={i.id} className="flex justify-between gap-2"><span className="truncate">{i.qtd}× {i.nome}</span><span>{brl(i.preco_centavos * i.qtd)}</span></li>
           ))}
         </ul>
+        <div className="border-t pt-2">
+          {cupom ? (
+            <div className="flex items-center justify-between rounded-lg bg-green-50 p-2 text-sm text-green-800">
+              <span>🎟️ {cupom.codigo}{cupom.descricao ? ` · ${cupom.descricao}` : ""}</span>
+              <button className="text-xs underline" onClick={() => { setCupom(null); setCupomInput(""); }}>remover</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input className="input py-1.5 uppercase" placeholder="Cupom" value={cupomInput} onChange={(e) => setCupomInput(e.target.value.toUpperCase())} />
+              <button className="btn-outline py-1.5" onClick={aplicarCupom} disabled={!cupomInput}>Aplicar</button>
+            </div>
+          )}
+          {cupomErro && <p className="mt-1 text-xs text-red-600">{cupomErro}</p>}
+        </div>
         <div className="border-t pt-2 text-sm">
           <div className="flex justify-between"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
-          <div className="flex justify-between"><span>Frete</span><span>{opcao ? (opcao.taxa_centavos === 0 ? "Grátis" : brl(opcao.taxa_centavos)) : "—"}</span></div>
+          <div className="flex justify-between"><span>Frete</span><span>{opcao ? (freteFinal === 0 ? "Grátis" : brl(freteFinal)) : "—"}</span></div>
+          {desconto > 0 && <div className="flex justify-between text-green-700"><span>Desconto</span><span>−{brl(desconto)}</span></div>}
           <div className="mt-1 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
         </div>
         {erro && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{erro}</p>}

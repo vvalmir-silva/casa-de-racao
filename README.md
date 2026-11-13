@@ -37,10 +37,16 @@ Acessos iniciais (troque em **Admin → Usuários**):
 | WhatsApp automático (pedido, pagamento, saiu p/ entrega, entregue, lembrete de recompra) | `WHATSAPP_PROVIDER=evolution` + `WHATSAPP_API_URL/KEY/INSTANCE`, ou `=zapi` + `ZAPI_INSTANCE/TOKEN/CLIENT_TOKEN` | Mensagens ficam registradas em Admin → Notificações como "desativado" |
 | PIX automático com QR Code e confirmação | `MP_ACCESS_TOKEN` (Mercado Pago) e, opcional, `MP_WEBHOOK_SECRET`. Cadastre o webhook `https://SEU-DOMINIO/api/webhooks/mercadopago` (evento *Pagamentos*) | Cliente vê a chave PIX manual e o admin confirma |
 | Links nas mensagens | `NEXT_PUBLIC_SITE_URL` | Sem link |
+| Upload de fotos de produto | `BLOB_READ_WRITE_TOKEN` (Vercel Blob, criado automaticamente ao conectar o store) | Só URL da imagem |
 
 **Migrações:** novas alterações de banco ficam em `db/migrations/*.sql`. Aplique com `npm run db:migrate` ou acessando `/api/admin/migrar` logado como admin.
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
+
+## Cupons e relatórios
+
+- **Admin → Cupons:** percentual, valor fixo ou frete grátis; pedido mínimo, limite de usos, validade, só primeira compra. Seed: `BEMVINDO10`.
+- **Admin → Relatórios:** receita, ticket médio, margem bruta (preencha o custo nos produtos), receita por dia, top produtos, por pagamento/entrega/zona, cupons usados.
 
 ## Como funciona a entrega
 

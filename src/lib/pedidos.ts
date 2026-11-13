@@ -2,6 +2,7 @@ import { z } from "zod";
 import { sql } from "./db";
 import { comTransacao } from "./pool";
 import { calcularFrete, partesLocais, type OpcaoEntrega } from "./frete";
+import { validarCupom } from "./cupons";
 
 export const enderecoSchema = z.object({
   apelido: z.string().trim().min(1).default("Casa"),
@@ -26,6 +27,7 @@ export const novoPedidoSchema = z.object({
   forma_pagamento: z.enum(["pix", "dinheiro", "cartao_entrega"]),
   troco_para_centavos: z.number().int().positive().nullable().optional(),
   observacoes: z.string().trim().max(500).optional().or(z.literal("")),
+  cupom: z.string().trim().max(40).optional().or(z.literal("")),
 });
 export type NovoPedidoInput = z.infer<typeof novoPedidoSchema>;
 
@@ -86,7 +88,18 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
     opcao = found;
   }
 
-  const total = subtotal + opcao.taxa_centavos;
+  // Cupom (revalidado no servidor)
+  let desconto = 0;
+  let cupomCodigo: string | null = null;
+  let frete = opcao.taxa_centavos;
+  if (input.cupom) {
+    const rc = await validarCupom(input.cupom, clienteId, subtotal, frete);
+    if (!rc.ok) throw new ErroPedido(rc.erro);
+    cupomCodigo = rc.cupom.codigo;
+    if (rc.frete_gratis) { desconto = 0; frete = 0; } else desconto = rc.desconto_centavos;
+  }
+
+  const total = Math.max(0, subtotal + frete - desconto);
   if (input.forma_pagamento === "dinheiro" && input.troco_para_centavos && input.troco_para_centavos < total) {
     throw new ErroPedido("Valor para troco menor que o total.");
   }
@@ -113,14 +126,19 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
       ? { ...endereco, id: enderecoId ?? undefined, complemento: endereco.complemento || null, referencia: endereco.referencia || null }
       : null;
 
+    if (cupomCodigo) {
+      const cu = await q(`UPDATE cupons SET usos = usos + 1 WHERE codigo = $1 AND ativo AND (limite_usos IS NULL OR usos < limite_usos) RETURNING id`, [cupomCodigo]);
+      if (cu.rowCount === 0) throw new ErroPedido("Cupom esgotado.");
+    }
+
     const ped = await q(
       `INSERT INTO pedidos (cliente_id, endereco, tipo_entrega, zona_id, janela_id, data_entrega, peso_total_kg,
-         subtotal_centavos, frete_centavos, total_centavos, forma_pagamento, troco_para_centavos, observacoes, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id, numero`,
+         subtotal_centavos, frete_centavos, total_centavos, forma_pagamento, troco_para_centavos, observacoes, status, cupom_codigo, desconto_centavos)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id, numero`,
       [
         clienteId, snap ? JSON.stringify(snap) : null, opcao.tipo, opcao.zona_id, opcao.janela_id, opcao.data_entrega, peso.toFixed(2),
-        subtotal, opcao.taxa_centavos, total, input.forma_pagamento, input.troco_para_centavos ?? null, input.observacoes || null,
-        input.forma_pagamento === "pix" ? "aguardando_pagamento" : "pago",
+        subtotal, frete, total, input.forma_pagamento, input.troco_para_centavos ?? null, input.observacoes || null,
+        input.forma_pagamento === "pix" ? "aguardando_pagamento" : "pago", cupomCodigo, desconto,
       ],
     );
     const pedidoId = String(ped.rows[0].id);
@@ -154,6 +172,7 @@ export async function cancelarPedido(pedidoId: string, porUsuarioId: string, adm
         i.produto_id, i.qtd, pedidoId, porUsuarioId,
       ]);
     }
+    await q(`UPDATE cupons SET usos = GREATEST(0, usos - 1) WHERE codigo = (SELECT cupom_codigo FROM pedidos WHERE id = $1)`, [pedidoId]);
     await q(`UPDATE pedidos SET status = 'cancelado', rota_id = NULL, ordem_rota = NULL WHERE id = $1`, [pedidoId]);
   });
 }

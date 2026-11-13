@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 type Pedido = {
   id: string; numero: number; status: string; tipo_entrega: string; data_entrega: string | null; endereco: Record<string, string> | null;
   subtotal_centavos: number; frete_centavos: number; total_centavos: number; forma_pagamento: string; troco_para_centavos: number | null;
-  observacoes: string | null; inicio: string | null; fim: string | null; criado_em: string;
+  observacoes: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
 };
 
 export default async function PedidoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ novo?: string }> }) {
@@ -59,6 +59,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
         <div className="mt-2 border-t pt-2">
           <div className="flex justify-between"><span>Subtotal</span><span>{brl(p.subtotal_centavos)}</span></div>
           <div className="flex justify-between"><span>Frete</span><span>{p.frete_centavos ? brl(p.frete_centavos) : "Grátis"}</span></div>
+          {p.desconto_centavos > 0 && <div className="flex justify-between text-green-700"><span>Cupom {p.cupom_codigo}</span><span>−{brl(p.desconto_centavos)}</span></div>}
           <div className="flex justify-between text-lg font-bold"><span>Total</span><span>{brl(p.total_centavos)}</span></div>
         </div>
       </div>

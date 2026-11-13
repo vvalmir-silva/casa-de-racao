@@ -4,9 +4,11 @@ import { exigirSessao } from "@/lib/auth";
 const itens = [
   ["/admin", "Resumo"],
   ["/admin/pedidos", "Pedidos"],
+  ["/admin/relatorios", "Relatórios"],
   ["/admin/rotas", "Rotas"],
   ["/admin/produtos", "Produtos"],
   ["/admin/entregas", "Zonas e janelas"],
+  ["/admin/cupons", "Cupons"],
   ["/admin/usuarios", "Usuários"],
   ["/admin/notificacoes", "Notificações"],
   ["/admin/config", "Configurações"],
