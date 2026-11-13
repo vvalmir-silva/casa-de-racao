@@ -5,21 +5,24 @@ import { Header } from "@/components/Header";
 import { getSessao } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: { default: "Casa de Ração", template: "%s · Casa de Ração" },
-  description: "Ração para cães, gatos e aves com entrega no seu bairro.",
+  title: { default: "Casa de Ração — entrega no seu bairro", template: "%s · Casa de Ração" },
+  description: "Ração para cães, gatos e aves com entrega no dia certo, no seu bairro.",
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ea580c" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B4D3E" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const sessao = await getSessao();
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen flex flex-col">
+      <body className="flex min-h-screen flex-col">
         <CarrinhoProvider>
           <Header sessao={sessao} />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 pb-24 sm:px-4 sm:py-6 md:pb-6">{children}</main>
-          <footer className="hidden border-t border-stone-200 py-6 text-center text-xs text-stone-500 md:block">
-            Casa de Ração · Entregamos no seu bairro
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-4 sm:pt-6 md:pb-10">{children}</main>
+          <footer className="hidden border-t border-line py-8 md:block">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-4 text-sm text-ink-3">
+              <span className="font-bold text-ink">Casa de Ração</span>
+              <span>Ração para cães, gatos e aves · entrega em rotas pelo bairro</span>
+            </div>
           </footer>
         </CarrinhoProvider>
       </body>

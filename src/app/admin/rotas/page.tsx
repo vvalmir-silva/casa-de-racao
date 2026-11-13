@@ -38,30 +38,30 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold">Rotas</h1>
+        <h1 className="h1">Rotas</h1>
         <form className="flex items-center gap-2"><input type="date" name="data" defaultValue={data} className="input w-40 py-1.5" /><button className="btn-outline py-1.5">Ver</button></form>
         <div className="flex gap-1 text-sm">
           <a className="btn-ghost py-1" href={`/admin/rotas?data=${somarDias(data, -1)}`}>‹</a>
-          <span className="py-1 text-stone-600">{DIAS_SEMANA[diaSemanaDe(data)]}, {dataBR(data)}</span>
+          <span className="py-1 text-ink-2">{DIAS_SEMANA[diaSemanaDe(data)]}, {dataBR(data)}</span>
           <a className="btn-ghost py-1" href={`/admin/rotas?data=${somarDias(data, 1)}`}>›</a>
         </div>
       </div>
       {Number(aguardandoPix[0].n) > 0 && (
-        <p className="rounded-lg bg-yellow-50 p-2 text-sm text-yellow-800">{aguardandoPix[0].n} pedido(s) para esta data ainda aguardando PIX — não entram na rota até confirmar.</p>
+        <p className="rounded-lg bg-kibble-50 p-3 text-sm text-ink">{aguardandoPix[0].n} pedido(s) para esta data ainda aguardando PIX — não entram na rota até confirmar.</p>
       )}
 
       <section className="card space-y-3">
-        <h2 className="font-semibold">Pedidos prontos para rota ({pendentes.length})</h2>
-        {pendentes.length === 0 ? <p className="text-sm text-stone-500">Nenhum pedido pago sem rota até esta data.</p> : (
+        <h2 className="h2">Pedidos prontos para rota ({pendentes.length})</h2>
+        {pendentes.length === 0 ? <p className="muted">Nenhum pedido pago sem rota até esta data.</p> : (
           <FormAction action={criarRota} className="space-y-3">
             <input type="hidden" name="data" value={data} />
             <div className="max-h-96 space-y-1 overflow-y-auto">
               {pendentes.map((p) => (
-                <label key={p.id} className="flex items-start gap-2 rounded-lg border border-stone-200 p-2 text-sm">
+                <label key={p.id} className="flex items-start gap-2 rounded-lg border border-line p-2 text-sm">
                   <input type="checkbox" name="pedido_id" value={p.id} defaultChecked className="mt-1" />
                   <div className="flex-1">
-                    <b>#{p.numero}</b> {p.cliente} · <span className="text-stone-500">{p.zona ?? "sem zona"}{p.inicio ? ` · ${p.inicio.slice(0, 5)}–${p.fim?.slice(0, 5)}` : " · expresso"}</span>
-                    <div className="text-xs text-stone-600">{p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)} · {Number(p.peso_total_kg)} kg · {brl(p.total_centavos)}</div>
+                    <b>#{p.numero}</b> {p.cliente} · <span className="text-ink-3">{p.zona ?? "sem zona"}{p.inicio ? ` · ${p.inicio.slice(0, 5)}–${p.fim?.slice(0, 5)}` : " · expresso"}</span>
+                    <div className="text-xs text-ink-2">{p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)} · {Number(p.peso_total_kg)} kg · {brl(p.total_centavos)}</div>
                   </div>
                 </label>
               ))}
@@ -82,9 +82,9 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
         return (
           <section key={r.id} className="card space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-semibold">Rota {r.zona ? `· ${r.zona}` : ""}</h2>
-              <span className={`badge ${r.status === "concluida" ? "bg-green-100 text-green-800" : r.status === "em_andamento" ? "bg-purple-100 text-purple-800" : "bg-stone-100"}`}>{r.status.replace("_", " ")}</span>
-              <span className="text-sm text-stone-500">{r.entregues}/{r.qtd} entregues</span>
+              <h2 className="h2">Rota {r.zona ? `· ${r.zona}` : ""}</h2>
+              <span className={`badge ${r.status === "concluida" ? "bg-pine-100 text-pine-800" : r.status === "em_andamento" ? "bg-violet-100 text-violet-900" : "bg-page"}`}>{r.status.replace("_", " ")}</span>
+              <span className="muted">{r.entregues}/{r.qtd} entregues</span>
               <a href={maps} target="_blank" className="btn-outline ml-auto py-1.5">Abrir no Maps</a>
               {r.status === "planejada" && <BotaoAction className="btn-outline py-1.5 text-red-700" action={excluirRota} args={[r.id]} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
             </div>
@@ -95,10 +95,10 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
             </FormAction>
             <ol className="space-y-1 text-sm">
               {peds.map((p) => (
-                <li key={p.id} className="flex items-center gap-2 rounded border border-stone-100 p-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-stone-900 text-xs text-white">{p.ordem_rota}</span>
+                <li key={p.id} className="flex items-center gap-2 rounded border border-line p-2">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-pine-700 text-xs text-white">{p.ordem_rota}</span>
                   <span className="flex-1">#{p.numero} {p.cliente} · {p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro}</span>
-                  <span className="badge bg-stone-100">{p.status}</span>
+                  <span className="badge bg-page">{p.status}</span>
                   {p.status !== "entregue" && r.status === "planejada" && <BotaoAction className="text-xs text-red-600" action={removerDaRota} args={[p.id]}>remover</BotaoAction>}
                 </li>
               ))}

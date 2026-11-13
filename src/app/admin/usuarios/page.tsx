@@ -19,7 +19,7 @@ export default async function UsuariosAdmin({ searchParams }: { searchParams: Pr
   `) as U[];
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Usuários</h1>
+      <h1 className="h1">Usuários</h1>
       <form className="flex flex-wrap gap-2">
         <input name="q" defaultValue={q} className="input w-48" placeholder="nome ou telefone" />
         <select name="papel" defaultValue={papel ?? ""} className="input w-36"><option value="">Todos</option><option value="cliente">Clientes</option><option value="motorista">Motoristas</option><option value="admin">Admins</option></select>

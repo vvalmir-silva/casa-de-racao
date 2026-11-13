@@ -27,10 +27,10 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Pedidos</h1>
+      <h1 className="h1">Pedidos</h1>
       <div className="flex flex-wrap items-center gap-2">
         {filtros.map(([v, l]) => (
-          <Link key={v} href={v ? `/admin/pedidos?status=${v}` : "/admin/pedidos"} className={`badge px-3 py-1.5 ${(status ?? "") === v ? "bg-brand-600 text-white" : "border bg-white"}`}>{l}</Link>
+          <Link key={v} href={v ? `/admin/pedidos?status=${v}` : "/admin/pedidos"} className={`chip ${(status ?? "") === v ? "chip-on" : "chip"}`}>{l}</Link>
         ))}
         <form className="ml-auto flex gap-1"><input name="q" defaultValue={q} className="input w-44 py-1.5" placeholder="nome, telefone, nº" /><button className="btn-outline py-1.5">Buscar</button></form>
       </div>
@@ -43,22 +43,22 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
               <div className="flex flex-wrap items-center gap-2">
                 <b>#{p.numero}</b>
                 <span className={`badge ${st.cor}`}>{st.label}</span>
-                <span className="text-stone-500">{dataHoraBR(p.criado_em)}</span>
+                <span className="text-ink-3">{dataHoraBR(p.criado_em)}</span>
                 <span className="ml-auto font-semibold">{brl(p.total_centavos)}</span>
               </div>
-              <div>{p.cliente} · <a className="text-green-700 underline" href={wa} target="_blank">{p.telefone}</a></div>
-              <div className="text-stone-600">{p.itens}</div>
-              <div className="text-stone-600">
+              <div>{p.cliente} · <a className="font-semibold text-pine-700 underline" href={wa} target="_blank">{p.telefone}</a></div>
+              <div className="text-ink-2">{p.itens}</div>
+              <div className="text-ink-2">
                 {TIPO_ENTREGA[p.tipo_entrega]} · {dataBR(p.data_entrega)} · {FORMA_PAGAMENTO[p.forma_pagamento]}{p.troco_para_centavos ? ` (troco p/ ${brl(p.troco_para_centavos)})` : ""}
                 {p.endereco && <> · {p.endereco.logradouro}, {p.endereco.numero}{p.endereco.complemento ? ` - ${p.endereco.complemento}` : ""} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)}</>}
-                {p.rota_id && <> · <span className="badge bg-purple-100 text-purple-800">em rota</span></>}
+                {p.rota_id && <> · <span className="badge bg-violet-100 text-violet-900">rota montada</span></>}
               </div>
-              {p.observacoes && <div className="text-stone-600">Obs.: {p.observacoes}</div>}
+              {p.observacoes && <div className="text-ink-2">Obs.: {p.observacoes}</div>}
               <StatusBotoes id={p.id} status={p.status} />
             </div>
           );
         })}
-        {pedidos.length === 0 && <p className="text-stone-500">Nenhum pedido.</p>}
+        {pedidos.length === 0 && <p className="text-ink-3">Nenhum pedido.</p>}
       </div>
     </div>
   );

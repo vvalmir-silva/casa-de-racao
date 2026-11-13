@@ -32,17 +32,17 @@ export default async function MotoristaPage({ searchParams }: { searchParams: Pr
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Minha rota</h1>
+        <h1 className="h1">Minha rota</h1>
         <div className="flex items-center gap-1 text-sm">
           <a className="btn-ghost py-1" href={`/motorista?data=${somarDias(data, -1)}`}>‹</a>
           <span>{dataBR(data)}</span>
           <a className="btn-ghost py-1" href={`/motorista?data=${somarDias(data, 1)}`}>›</a>
         </div>
       </div>
-      {lista.length === 0 && <p className="card text-sm text-stone-500">Nenhuma rota atribuída para esta data.</p>}
+      {lista.length === 0 && <p className="card muted">Nenhuma rota atribuída para esta data.</p>}
       {lista.map((r) => <RotaMotorista key={r.id} rota={r} />)}
       {paradas.length > 0 && (
-        <p className="text-xs text-stone-500">A receber na porta (dinheiro/cartão): <b>{brl(paradas.filter((p) => p.forma_pagamento !== "pix" && p.status !== "entregue").reduce((a, p) => a + p.total_centavos, 0))}</b>. PIX já está pago.</p>
+        <p className="text-xs text-ink-3">A receber na porta (dinheiro/cartão): <b>{brl(paradas.filter((p) => p.forma_pagamento !== "pix" && p.status !== "entregue").reduce((a, p) => a + p.total_centavos, 0))}</b>. PIX já está pago.</p>
       )}
     </div>
   );

@@ -14,10 +14,10 @@ export default async function NotificacoesAdmin() {
     SELECT n.id, n.telefone, n.tipo, n.mensagem, n.status, n.erro, n.criado_em, p.numero
     FROM notificacoes n LEFT JOIN pedidos p ON p.id = n.pedido_id ORDER BY n.criado_em DESC LIMIT 100
   `) as N[];
-  const cor: Record<string, string> = { enviada: "bg-green-100 text-green-800", erro: "bg-red-100 text-red-700", desativado: "bg-stone-100 text-stone-600", pendente: "bg-yellow-100 text-yellow-800" };
+  const cor: Record<string, string> = { enviada: "bg-pine-100 text-pine-800", erro: "bg-red-100 text-red-700", desativado: "bg-page text-ink-2", pendente: "bg-yellow-100 text-yellow-800" };
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Notificações</h1>
+      <h1 className="h1">Notificações</h1>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="card text-sm">
           <div className="font-semibold">WhatsApp</div>
@@ -30,7 +30,7 @@ export default async function NotificacoesAdmin() {
         <div className="card text-sm">
           <div className="font-semibold">PIX automático (Mercado Pago)</div>
           <div className={pixAutomaticoAtivo() ? "text-green-700" : "text-red-700"}>{pixAutomaticoAtivo() ? "Ativo — QR Code gerado no pedido e confirmação via webhook" : "Inativo (defina MP_ACCESS_TOKEN) — cliente vê a chave PIX manual"}</div>
-          <div className="mt-1 text-xs text-stone-500">Webhook: <code>/api/webhooks/mercadopago</code></div>
+          <div className="mt-1 text-xs text-ink-3">Webhook: <code>/api/webhooks/mercadopago</code></div>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -44,10 +44,10 @@ export default async function NotificacoesAdmin() {
                 <td data-label="Para" className="whitespace-nowrap">{mascaraTelefone(n.telefone.replace(/^55/, ""))}</td>
                 <td data-label="Tipo">{n.tipo}</td>
                 <td data-label="Status"><span className={`badge ${cor[n.status] ?? ""}`}>{n.status}</span>{n.erro && <div className="max-w-[200px] truncate text-xs text-red-600" title={n.erro}>{n.erro}</div>}</td>
-                <td className="max-w-[320px] whitespace-pre-line text-xs text-stone-600">{n.mensagem}</td>
+                <td className="max-w-[320px] whitespace-pre-line text-xs text-ink-2">{n.mensagem}</td>
               </tr>
             ))}
-            {lista.length === 0 && <tr><td colSpan={6} className="text-stone-500">Nenhuma notificação ainda.</td></tr>}
+            {lista.length === 0 && <tr><td colSpan={6} className="text-ink-3">Nenhuma notificação ainda.</td></tr>}
           </tbody>
         </table>
       </div>

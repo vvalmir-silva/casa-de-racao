@@ -10,7 +10,7 @@ export default async function ConfigAdmin() {
   const c = await getConfig();
   return (
     <div className="max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Configurações</h1>
+      <h1 className="h1">Configurações</h1>
       <FormAction action={salvarConfig} className="card grid grid-cols-2 gap-3">
         <h2 className="col-span-full font-semibold">Loja</h2>
         <div><label className="label">Nome</label><input name="loja_nome" className="input" defaultValue={c.loja_nome} /></div>
@@ -35,7 +35,7 @@ export default async function ConfigAdmin() {
         <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="whatsapp_notificacoes" defaultChecked={(c.whatsapp_notificacoes ?? "true") === "true"} /> Enviar notificações automáticas por WhatsApp</label>
         <div><label className="label">Lembrete de recompra (dias antes de acabar)</label><input name="recompra_dias_antes" className="input" defaultValue={c.recompra_dias_antes ?? "3"} /></div>
         <div><label className="label">Validade do PIX (minutos)</label><input name="pix_expiracao_minutos" className="input" defaultValue={c.pix_expiracao_minutos ?? "60"} /></div>
-        <p className="col-span-full text-xs text-stone-500">Provedor de WhatsApp e token do Mercado Pago ficam nas variáveis de ambiente (ver README). Status em Admin → Notificações.</p>
+        <p className="col-span-full text-xs text-ink-3">Provedor de WhatsApp e token do Mercado Pago ficam nas variáveis de ambiente (ver README). Status em Admin → Notificações.</p>
         <div className="col-span-full"><button className="btn-primary">Salvar</button></div>
       </FormAction>
     </div>

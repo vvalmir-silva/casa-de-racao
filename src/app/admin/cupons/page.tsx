@@ -14,7 +14,7 @@ export default async function CuponsAdmin({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Cupons</h1>
+        <h1 className="h1">Cupons</h1>
         <a href="/admin/cupons?editar=novo" className="btn-primary">+ Cupom</a>
       </div>
       {(editar === "novo" || c) && (
@@ -39,14 +39,14 @@ export default async function CuponsAdmin({ searchParams }: { searchParams: Prom
           <tbody>
             {cupons.map((x) => (
               <tr key={x.id} className={x.ativo ? "" : "opacity-50"}>
-                <td data-label="Código"><b>{x.codigo}</b><div className="text-xs text-stone-500">{x.descricao}</div></td>
+                <td data-label="Código"><b>{x.codigo}</b><div className="text-xs text-ink-3">{x.descricao}</div></td>
                 <td data-label="Desconto">{x.tipo === "percentual" ? `${x.valor}%` : x.tipo === "fixo" ? brl(x.valor) : tipoLabel.frete_gratis}</td>
                 <td data-label="Mínimo">{x.minimo_centavos ? brl(x.minimo_centavos) : "—"}</td>
                 <td data-label="Usos">{x.usos}{x.limite_usos ? ` / ${x.limite_usos}` : ""}</td>
                 <td data-label="Validade">{x.valido_ate ? dataBR(x.valido_ate) : "—"}</td>
                 <td className="text-xs">{x.primeira_compra ? "1ª compra" : ""}</td>
                 <td className="whitespace-nowrap">
-                  <a href={`/admin/cupons?editar=${x.id}`} className="mr-2 text-brand-700 underline">editar</a>
+                  <a href={`/admin/cupons?editar=${x.id}`} className="mr-2 font-semibold text-pine-700 underline">editar</a>
                   <BotaoAction className="text-xs underline" action={alternarCupom} args={[x.id, !x.ativo]}>{x.ativo ? "desativar" : "ativar"}</BotaoAction>
                 </td>
               </tr>

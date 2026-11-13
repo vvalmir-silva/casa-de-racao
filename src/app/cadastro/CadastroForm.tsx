@@ -9,18 +9,19 @@ export function CadastroForm() {
   const sp = useSearchParams();
   const [state, action, pending] = useActionState(cadastroAction, undefined);
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-bold">Criar conta</h1>
-      <form action={action} className="card space-y-3">
+    <div className="mx-auto max-w-sm pt-4 sm:pt-10">
+      <h1 className="h1 mb-1">Criar conta</h1>
+      <p className="muted mb-5">Leva menos de um minuto. Só telefone e senha.</p>
+      <form action={action} className="card space-y-4">
         <input type="hidden" name="next" value={sp.get("next") ?? ""} />
         <div><label className="label">Nome</label><input name="nome" required className="input" /></div>
         <div><label className="label">Telefone (WhatsApp)</label><input name="telefone" inputMode="tel" required className="input" placeholder="(11) 99999-9999" /></div>
         <div><label className="label">E-mail (opcional)</label><input name="email" type="email" className="input" /></div>
         <div><label className="label">Senha</label><input name="senha" type="password" minLength={6} required className="input" /></div>
-        {state?.erro && <p className="text-sm text-red-600">{state.erro}</p>}
+        {state?.erro && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{state.erro}</p>}
         <button className="btn-primary w-full" disabled={pending}>{pending ? "Criando..." : "Criar conta"}</button>
-        <p className="text-center text-sm text-stone-600">
-          Já tem conta? <Link href="/login" className="text-brand-700 underline">Entrar</Link>
+        <p className="text-center text-sm text-ink-2">
+          Já tem conta? <Link href="/login" className="font-bold text-pine-700 underline">Entrar</Link>
         </p>
       </form>
     </div>

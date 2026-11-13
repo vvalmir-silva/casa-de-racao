@@ -37,20 +37,20 @@ export function PixBox({ pedidoId, total, chaveManual, whatsappLink }: { pedidoI
     try { await navigator.clipboard.writeText(t); setCopiado(true); setTimeout(() => setCopiado(false), 2000); } catch {}
   }
 
-  if (pix === undefined) return <div className="card text-sm text-stone-500">Gerando PIX...</div>;
+  if (pix === undefined) return <div className="card text-sm text-ink-3">Gerando PIX...</div>;
 
   if (pix && pix.qr_code) {
     const expirado = pix.expira_em && new Date(pix.expira_em) < new Date();
     return (
-      <div className="card space-y-3 border-brand-200 bg-brand-50">
-        <div className="font-semibold">Pague com PIX · {brl(total)}</div>
+      <div className="card space-y-3 border-pine-200 bg-pine-50">
+        <div className="h2">Pague com PIX · {brl(total)}</div>
         {pix.qr_code_base64 && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code PIX" className="mx-auto h-56 w-56 rounded-lg bg-white p-2" />
         )}
         <div className="rounded-lg bg-white p-2 text-xs break-all">{pix.qr_code}</div>
         <button className="btn-primary w-full" onClick={() => copiar(pix.qr_code!)}>{copiado ? "Copiado ✓" : "Copiar código PIX"}</button>
-        <p className="text-center text-xs text-stone-600">
+        <p className="text-center text-xs text-ink-2">
           {expirado ? "Código expirado — recarregue a página para gerar outro." : "A confirmação é automática em alguns segundos após o pagamento."}
         </p>
       </div>
@@ -58,8 +58,8 @@ export function PixBox({ pedidoId, total, chaveManual, whatsappLink }: { pedidoI
   }
 
   return (
-    <div className="card space-y-2 border-brand-200 bg-brand-50">
-      <div className="font-semibold">Pague via PIX para confirmar</div>
+    <div className="card space-y-2 border-pine-200 bg-pine-50">
+      <div className="h2">Pague via PIX para confirmar</div>
       <div className="text-sm">Chave: <b className="select-all">{chaveManual}</b></div>
       <div className="text-sm">Valor: <b>{brl(total)}</b></div>
       <button className="btn-outline w-full" onClick={() => copiar(chaveManual)}>{copiado ? "Copiado ✓" : "Copiar chave"}</button>

@@ -32,7 +32,7 @@ export function RotaMotorista({ rota }: { rota: RotaDoDia }) {
     <section className="card space-y-3">
       <div className="flex items-center gap-2">
         <b>{rota.zona ?? "Rota"}</b>
-        <span className="text-sm text-stone-500">{paradas.length - pendentes.length}/{paradas.length} entregues</span>
+        <span className="text-sm text-ink-3">{paradas.length - pendentes.length}/{paradas.length} entregues</span>
         <div className="ml-auto flex gap-2">
           {rota.status === "planejada" && <button className="btn-primary py-1.5" disabled={p} onClick={() => start(async () => { await iniciarRota(rota.id); router.refresh(); })}>Iniciar rota</button>}
           {rota.status === "em_andamento" && pendentes.length === 0 && <button className="btn-primary py-1.5" disabled={p} onClick={() => start(async () => { await concluirRota(rota.id); router.refresh(); })}>Concluir</button>}
@@ -40,8 +40,8 @@ export function RotaMotorista({ rota }: { rota: RotaDoDia }) {
       </div>
 
       {prox && rota.status === "em_andamento" && (
-        <div className="rounded-lg border border-brand-200 bg-brand-50 p-3">
-          <div className="text-xs font-semibold uppercase text-brand-700">Próxima parada</div>
+        <div className="rounded-lg border border-kibble-400 bg-kibble-50 p-3">
+          <div className="text-xs font-semibold uppercase text-pine-700">Próxima parada</div>
           <div className="font-medium">#{prox.numero} · {prox.cliente}</div>
           <div className="text-sm">{endTxt(prox.endereco)}{prox.endereco.complemento ? ` · ${prox.endereco.complemento}` : ""}</div>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -56,16 +56,16 @@ export function RotaMotorista({ rota }: { rota: RotaDoDia }) {
         {paradas.map((x, i) => {
           const feito = x.status === "entregue";
           return (
-            <li key={x.id} className={`rounded-lg border p-3 text-sm ${feito ? "border-green-200 bg-green-50 opacity-70" : "border-stone-200"}`}>
+            <li key={x.id} className={`rounded-lg border p-3 text-sm ${feito ? "border-pine-200 bg-pine-50 opacity-70" : "border-line"}`}>
               <div className="flex items-start gap-2">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone-900 text-xs text-white">{i + 1}</span>
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-pine-700 text-xs text-white">{i + 1}</span>
                 <div className="flex-1">
-                  <div className="font-medium">#{x.numero} · {x.cliente}{x.inicio ? <span className="ml-1 text-xs text-stone-500">({x.inicio.slice(0, 5)}–{x.fim?.slice(0, 5)})</span> : null}</div>
+                  <div className="font-medium">#{x.numero} · {x.cliente}{x.inicio ? <span className="ml-1 text-xs text-ink-3">({x.inicio.slice(0, 5)}–{x.fim?.slice(0, 5)})</span> : null}</div>
                   <div>{x.endereco.logradouro}, {x.endereco.numero}{x.endereco.complemento ? ` - ${x.endereco.complemento}` : ""} · {x.endereco.bairro}</div>
-                  {x.endereco.referencia && <div className="text-xs text-stone-500">Ref.: {x.endereco.referencia}</div>}
-                  <div className="text-xs text-stone-600">{x.itens}</div>
+                  {x.endereco.referencia && <div className="text-xs text-ink-3">Ref.: {x.endereco.referencia}</div>}
+                  <div className="text-xs text-ink-2">{x.itens}</div>
                   <div className="text-xs font-medium">{FORMA_PAGAMENTO[x.forma_pagamento]} · {brl(x.total_centavos)}{x.troco_para_centavos ? ` · troco p/ ${brl(x.troco_para_centavos)}` : ""}{x.forma_pagamento === "pix" ? " · já pago" : " · RECEBER"}</div>
-                  {x.observacoes && <div className="text-xs text-stone-600">Obs.: {x.observacoes}</div>}
+                  {x.observacoes && <div className="text-xs text-ink-2">Obs.: {x.observacoes}</div>}
                 </div>
                 {!feito && rota.status !== "concluida" && (
                   <div className="flex flex-col gap-1">

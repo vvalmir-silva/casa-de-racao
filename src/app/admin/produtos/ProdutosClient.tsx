@@ -55,7 +55,7 @@ export function CategoriaForm({ categorias }: { categorias: { id: number; nome: 
   return (
     <details className="card">
       <summary className="cursor-pointer font-semibold">Categorias ({categorias.length})</summary>
-      <ul className="mt-2 flex flex-wrap gap-2 text-xs">{categorias.map((c) => <li key={c.id} className="badge bg-stone-100">{c.nome} · {c.especie}</li>)}</ul>
+      <ul className="mt-2 flex flex-wrap gap-2 text-xs">{categorias.map((c) => <li key={c.id} className="badge bg-page">{c.nome} · {c.especie}</li>)}</ul>
       <FormAction action={salvarCategoria} className="mt-3 flex flex-wrap gap-2">
         <input name="nome" className="input w-48" placeholder="Nova categoria" required />
         <select name="especie" className="input w-32"><option value="cao">Cão</option><option value="gato">Gato</option><option value="ave">Ave</option><option value="outro">Outro</option></select>

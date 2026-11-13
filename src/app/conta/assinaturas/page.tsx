@@ -18,20 +18,20 @@ export default async function AssinaturasPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
-        <h1 className="text-xl font-bold">Assinaturas</h1>
-        <p className="text-sm text-stone-600">A ração chega sozinha, no intervalo que você escolher. O pedido é gerado 2 dias antes e entregue na janela da sua zona.</p>
+        <h1 className="h1">Assinaturas</h1>
+        <p className="text-sm text-ink-2">A ração chega sozinha, no intervalo que você escolher. O pedido é gerado 2 dias antes e entregue na janela da sua zona.</p>
       </div>
       {assinaturas.map((a) => (
         <div key={a.id} className={`card flex items-center justify-between text-sm ${a.ativa ? "" : "opacity-60"}`}>
           <div>
             <div className="font-medium">{a.qtd}× {a.produto}</div>
-            <div className="text-xs text-stone-500">a cada {a.intervalo_dias} dias · próxima {dataBR(a.proxima_data)} · {a.apelido} · {brl(a.preco_centavos * a.qtd)}</div>
+            <div className="text-xs text-ink-3">a cada {a.intervalo_dias} dias · próxima {dataBR(a.proxima_data)} · {a.apelido} · {brl(a.preco_centavos * a.qtd)}</div>
           </div>
           <AlternarAssinatura id={a.id} ativa={a.ativa} />
         </div>
       ))}
       {enderecos.length === 0 ? (
-        <p className="text-sm text-stone-500">Cadastre um endereço em <a href="/conta" className="underline">Minha conta</a> para assinar.</p>
+        <p className="muted">Cadastre um endereço em <a href="/conta" className="underline">Minha conta</a> para assinar.</p>
       ) : (
         <AssinaturaForm produtos={produtos} enderecos={enderecos} />
       )}

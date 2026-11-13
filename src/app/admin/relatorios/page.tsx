@@ -68,12 +68,12 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
   const maxDia = Math.max(1, ...porDia.map((d) => d.receita));
 
   const Card = ({ t, v, s }: { t: string; v: string; s?: string }) => (
-    <div className="card"><div className="text-xs text-stone-500">{t}</div><div className="text-xl font-bold">{v}</div>{s && <div className="text-xs text-stone-500">{s}</div>}</div>
+    <div className="card"><div className="text-xs text-ink-3">{t}</div><div className="text-xl font-bold">{v}</div>{s && <div className="text-xs text-ink-3">{s}</div>}</div>
   );
   const Tabela = ({ titulo, linhas, label, col = "Receita" }: { titulo: string; linhas: Linha[]; label?: (k: string) => string; col?: string }) => (
     <div className="card">
-      <h3 className="mb-2 font-semibold">{titulo}</h3>
-      {linhas.length === 0 ? <p className="text-sm text-stone-500">Sem dados.</p> : (
+      <h3 className="h2 mb-3">{titulo}</h3>
+      {linhas.length === 0 ? <p className="muted">Sem dados.</p> : (
         <table className="table"><thead><tr><th></th><th className="text-right">Pedidos</th><th className="text-right">{col}</th></tr></thead>
           <tbody>{linhas.map((l) => <tr key={l.chave}><td>{label ? label(l.chave) : l.chave}</td><td className="text-right">{l.pedidos}</td><td className="text-right">{brl(l.receita)}</td></tr>)}</tbody></table>
       )}
@@ -83,13 +83,13 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-bold">Relatórios</h1>
+        <h1 className="h1">Relatórios</h1>
         <div className="ml-auto flex flex-wrap items-center gap-1">
-          {periodos.map(([v, l]) => <a key={v} href={`/admin/relatorios?p=${v}`} className={`badge px-3 py-1.5 ${p === v && !sp.de ? "bg-brand-600 text-white" : "border bg-white"}`}>{l}</a>)}
+          {periodos.map(([v, l]) => <a key={v} href={`/admin/relatorios?p=${v}`} className={`chip ${p === v && !sp.de ? "chip-on" : "chip"}`}>{l}</a>)}
           <form className="flex items-center gap-1"><input type="date" name="de" defaultValue={de} className="input w-36 py-1" /><input type="date" name="ate" defaultValue={ate} className="input w-36 py-1" /><button className="btn-outline py-1">OK</button></form>
         </div>
       </div>
-      <p className="text-sm text-stone-500">{dataBR(de)} a {dataBR(ate)} · pedidos cancelados excluídos</p>
+      <p className="muted">{dataBR(de)} a {dataBR(ate)} · pedidos cancelados excluídos</p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card t="Receita" v={brl(r.receita)} s={`${r.pedidos} pedidos`} />
@@ -103,13 +103,13 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
       </div>
 
       <div className="card">
-        <h3 className="mb-3 font-semibold">Receita por dia</h3>
-        {porDia.length === 0 ? <p className="text-sm text-stone-500">Sem vendas no período.</p> : (
+        <h3 className="h2 mb-3">Receita por dia</h3>
+        {porDia.length === 0 ? <p className="muted">Sem vendas no período.</p> : (
           <div className="flex h-40 items-end gap-1 overflow-x-auto">
             {porDia.map((d) => (
               <div key={d.chave} className="group flex min-w-[14px] flex-1 flex-col items-center justify-end" title={`${dataBR(d.chave)}: ${brl(d.receita)} (${d.pedidos})`}>
-                <div className="w-full rounded-t bg-brand-500 transition group-hover:bg-brand-700" style={{ height: `${Math.max(2, (d.receita / maxDia) * 100)}%` }} />
-                <div className="mt-1 text-[9px] text-stone-500">{d.chave.slice(8)}</div>
+                <div className="w-full rounded-t bg-pine-500 transition group-hover:bg-pine-700" style={{ height: `${Math.max(2, (d.receita / maxDia) * 100)}%` }} />
+                <div className="mt-1 text-[9px] text-ink-3">{d.chave.slice(8)}</div>
               </div>
             ))}
           </div>
@@ -117,7 +117,7 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
       </div>
 
       <div className="card">
-        <h3 className="mb-2 font-semibold">Produtos mais vendidos</h3>
+        <h3 className="h2 mb-3">Produtos mais vendidos</h3>
         <table className="table"><thead><tr><th>Produto</th><th className="text-right">Qtd</th><th className="text-right">Receita</th><th className="text-right">Margem</th></tr></thead>
           <tbody>{top.map((t) => <tr key={t.nome}><td>{t.nome}</td><td className="text-right">{t.qtd}</td><td className="text-right">{brl(t.receita)}</td><td className="text-right">{t.custo != null ? brl(t.receita - t.custo) : "—"}</td></tr>)}</tbody></table>
       </div>

@@ -19,7 +19,7 @@ export default async function ProdutosAdmin({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Produtos</h1>
+        <h1 className="h1">Produtos</h1>
         <a href="/admin/produtos?editar=novo" className="btn-primary">+ Produto</a>
       </div>
       {(editar === "novo" || emEdicao) && <ProdutoForm produto={emEdicao} categorias={categorias} />}
@@ -29,12 +29,12 @@ export default async function ProdutosAdmin({ searchParams }: { searchParams: Pr
           <tbody>
             {produtos.map((p) => (
               <tr key={p.id} className={p.ativo ? "" : "opacity-50"}>
-                <td data-label="Produto"><div className="font-medium">{p.nome}</div><div className="text-xs text-stone-500">{p.marca} · {Number(p.peso_kg)} kg{p.destaque ? " · ★" : ""}</div></td>
+                <td data-label="Produto"><div className="font-medium">{p.nome}</div><div className="text-xs text-ink-3">{p.marca} · {Number(p.peso_kg)} kg{p.destaque ? " · ★" : ""}</div></td>
                 <td data-label="Categoria">{p.categoria}</td>
                 <td data-label="Preço">{brl(p.preco_centavos)}</td>
-                <td data-label="Estoque"><span className={`badge ${p.estoque <= 3 ? "bg-red-100 text-red-700" : "bg-stone-100"}`}>{p.estoque}</span></td>
+                <td data-label="Estoque"><span className={`badge ${p.estoque <= 3 ? "bg-red-100 text-red-700" : "bg-page"}`}>{p.estoque}</span></td>
                 <td data-label="Ajuste"><EstoqueAjuste id={p.id} /></td>
-                <td><a href={`/admin/produtos?editar=${p.id}`} className="text-brand-700 underline">editar</a></td>
+                <td><a href={`/admin/produtos?editar=${p.id}`} className="font-semibold text-pine-700 underline">editar</a></td>
               </tr>
             ))}
           </tbody>

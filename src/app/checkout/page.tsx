@@ -15,7 +15,7 @@ export default async function CheckoutPage() {
   const cfg = await getConfig();
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">Finalizar pedido</h1>
+      <h1 className="h1 mb-4">Fechar pedido</h1>
       <CheckoutForm enderecos={enderecos} pixChave={cfg.pix_chave ?? ""} lojaEndereco={cfg.loja_endereco ?? ""} freteGratisMinimo={Number(cfg.frete_gratis_minimo_centavos ?? 0)} />
     </div>
   );

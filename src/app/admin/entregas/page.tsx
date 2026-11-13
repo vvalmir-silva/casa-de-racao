@@ -18,8 +18,8 @@ export default async function EntregasAdmin() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold">Zonas e janelas de entrega</h1>
-        <p className="text-sm text-stone-600">Cada zona é um conjunto de prefixos de CEP (5 primeiros dígitos), com taxa e dias de entrega. Janelas definem o horário de corte e o período de entrega.</p>
+        <h1 className="h1">Zonas e janelas de entrega</h1>
+        <p className="text-sm text-ink-2">Cada zona é um conjunto de prefixos de CEP (5 primeiros dígitos), com taxa e dias de entrega. Janelas definem o horário de corte e o período de entrega.</p>
       </div>
 
       {zonas.map((z) => (
@@ -33,7 +33,7 @@ export default async function EntregasAdmin() {
               <label className="label">Dias de entrega</label>
               <div className="flex flex-wrap gap-2">
                 {DIAS_SEMANA.map((d, i) => (
-                  <label key={i} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1 text-sm"><input type="checkbox" name="dias" value={i} defaultChecked={z.dias_entrega.includes(i)} />{d}</label>
+                  <label key={i} className="flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-sm"><input type="checkbox" name="dias" value={i} defaultChecked={z.dias_entrega.includes(i)} />{d}</label>
                 ))}
               </div>
             </div>
@@ -44,7 +44,7 @@ export default async function EntregasAdmin() {
             </div>
           </FormAction>
 
-          <div className="rounded-lg bg-stone-50 p-3">
+          <div className="rounded-xl bg-page p-3">
             <div className="mb-2 text-sm font-semibold">Janelas</div>
             <div className="space-y-2">
               {janelas.filter((j) => j.zona_id === z.id).map((j) => (
@@ -70,21 +70,21 @@ export default async function EntregasAdmin() {
       ))}
 
       <section className="card">
-        <h2 className="mb-2 font-semibold">Nova zona</h2>
+        <h2 className="h2 mb-3">Nova zona</h2>
         <FormAction action={salvarZona} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="col-span-2"><label className="label">Nome</label><input name="nome" className="input" placeholder="Zona 4 — Bairro X" required /></div>
           <div><label className="label">Taxa (R$)</label><input name="taxa" className="input" inputMode="decimal" defaultValue="10,00" /></div>
           <div className="flex items-end"><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="ativa" defaultChecked /> Ativa</label></div>
           <div className="col-span-full flex flex-wrap gap-2">
             {DIAS_SEMANA.map((d, i) => (
-              <label key={i} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1 text-sm"><input type="checkbox" name="dias" value={i} defaultChecked={i >= 1 && i <= 5} />{d}</label>
+              <label key={i} className="flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-sm"><input type="checkbox" name="dias" value={i} defaultChecked={i >= 1 && i <= 5} />{d}</label>
             ))}
           </div>
           <div className="col-span-full"><label className="label">Prefixos de CEP</label><textarea name="prefixos" className="input font-mono text-xs" rows={2} placeholder="03101, 03102, 03103" /></div>
           <div className="col-span-full"><button className="btn-primary">Criar zona</button></div>
         </FormAction>
       </section>
-      <p className="text-xs text-stone-500">Valor mínimo para frete grátis e adicional por peso ficam em Configurações.</p>
+      <p className="text-xs text-ink-3">Valor mínimo para frete grátis e adicional por peso ficam em Configurações.</p>
     </div>
   );
 }

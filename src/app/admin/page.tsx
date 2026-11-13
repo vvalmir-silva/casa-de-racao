@@ -27,12 +27,13 @@ export default async function AdminHome() {
   ];
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">Resumo</h1>
+      <h1 className="h1 mb-1">Resumo</h1>
+      <p className="muted mb-5">O que precisa de atenção hoje.</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {cards.map(([t, v, h]) => (
-          <Link key={t} href={h} className="card hover:bg-stone-50">
-            <div className="text-xs text-stone-500">{t}</div>
-            <div className="text-2xl font-bold">{v}</div>
+          <Link key={t} href={h} className="stat hover:border-pine-200">
+            <div className="stat-t">{t}</div>
+            <div className="stat-v">{v}</div>
           </Link>
         ))}
       </div>

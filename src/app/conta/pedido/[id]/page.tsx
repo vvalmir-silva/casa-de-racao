@@ -31,9 +31,9 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      {novo && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-800">Pedido recebido! Obrigado 🐾</div>}
+      {novo && <div className="rounded-2xl bg-pine-700 p-4 text-white"><div className="text-lg font-extrabold">Pedido recebido 🐾</div><div className="text-sm text-pine-100">Obrigado! Acompanhe o status por aqui e pelo WhatsApp.</div></div>}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Pedido #{p.numero}</h1>
+        <h1 className="h1">Pedido #{p.numero}</h1>
         <span className={`badge ${st.cor}`}>{st.label}</span>
       </div>
 
@@ -44,12 +44,12 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
       <div className="card space-y-1 text-sm">
         <div><b>{TIPO_ENTREGA[p.tipo_entrega]}</b>{p.data_entrega && <> · {dataBR(p.data_entrega)}{p.inicio ? `, ${hm(p.inicio)}–${hm(p.fim!)}` : ""}</>}</div>
         {p.endereco ? (
-          <div className="text-stone-600">{p.endereco.logradouro}, {p.endereco.numero}{p.endereco.complemento ? ` - ${p.endereco.complemento}` : ""} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)}</div>
+          <div className="text-ink-2">{p.endereco.logradouro}, {p.endereco.numero}{p.endereco.complemento ? ` - ${p.endereco.complemento}` : ""} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)}</div>
         ) : (
-          <div className="text-stone-600">{cfg.loja_endereco}</div>
+          <div className="text-ink-2">{cfg.loja_endereco}</div>
         )}
-        <div className="text-stone-600">{FORMA_PAGAMENTO[p.forma_pagamento]}{p.troco_para_centavos ? ` · troco para ${brl(p.troco_para_centavos)}` : ""}</div>
-        {p.observacoes && <div className="text-stone-600">Obs.: {p.observacoes}</div>}
+        <div className="text-ink-2">{FORMA_PAGAMENTO[p.forma_pagamento]}{p.troco_para_centavos ? ` · troco para ${brl(p.troco_para_centavos)}` : ""}</div>
+        {p.observacoes && <div className="text-ink-2">Obs.: {p.observacoes}</div>}
       </div>
 
       <div className="card text-sm">
@@ -60,7 +60,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
           <div className="flex justify-between"><span>Subtotal</span><span>{brl(p.subtotal_centavos)}</span></div>
           <div className="flex justify-between"><span>Frete</span><span>{p.frete_centavos ? brl(p.frete_centavos) : "Grátis"}</span></div>
           {p.desconto_centavos > 0 && <div className="flex justify-between text-green-700"><span>Cupom {p.cupom_codigo}</span><span>−{brl(p.desconto_centavos)}</span></div>}
-          <div className="flex justify-between text-lg font-bold"><span>Total</span><span>{brl(p.total_centavos)}</span></div>
+          <div className="flex justify-between text-lg font-extrabold"><span>Total</span><span>{brl(p.total_centavos)}</span></div>
         </div>
       </div>
 

@@ -114,16 +114,16 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
       <div className="space-y-5">
         {/* Endereço */}
         <section className="card space-y-3">
-          <h2 className="font-semibold">1. Endereço</h2>
+          <h2 className="h2">Endereço de entrega</h2>
           {enderecos.length > 0 && (
             <div className="space-y-2">
               {enderecos.map((e) => (
-                <label key={e.id} className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === e.id ? "border-brand-500 bg-brand-50" : "border-stone-200"}`}>
+                <label key={e.id} className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === e.id ? "border-pine-700 bg-pine-50" : "border-line"}`}>
                   <input type="radio" name="end" checked={enderecoId === e.id} onChange={() => setEnderecoId(e.id)} />
                   <div><b>{e.apelido}</b> · {e.logradouro}, {e.numero}{e.complemento ? ` - ${e.complemento}` : ""} · {e.bairro} · {mascaraCep(e.cep)}</div>
                 </label>
               ))}
-              <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === "novo" ? "border-brand-500 bg-brand-50" : "border-stone-200"}`}>
+              <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === "novo" ? "border-pine-700 bg-pine-50" : "border-line"}`}>
                 <input type="radio" name="end" checked={enderecoId === "novo"} onChange={() => setEnderecoId("novo")} />
                 <div>Novo endereço</div>
               </label>
@@ -147,26 +147,26 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
 
         {/* Entrega */}
         <section className="card space-y-3">
-          <h2 className="font-semibold">2. Entrega</h2>
-          {carregandoFrete && <p className="text-sm text-stone-500">Calculando...</p>}
+          <h2 className="h2">Quando entregar</h2>
+          {carregandoFrete && <p className="muted">Calculando...</p>}
           {frete && cepAtual.length === 8 && !frete.atende && (
-            <p className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">Ainda não entregamos neste CEP. Você pode retirar na loja.</p>
+            <p className="rounded-xl bg-kibble-50 p-3 text-sm text-ink">Ainda não entregamos neste CEP. Você pode retirar na loja.</p>
           )}
           {frete && cepAtual.length !== 8 && (
-            <p className="text-sm text-stone-500">Informe o CEP para ver as opções de entrega.</p>
+            <p className="muted">Informe o CEP para ver as opções de entrega.</p>
           )}
           {faltaGratis > 0 && frete?.atende && (
-            <p className="text-xs text-stone-500">Faltam {brl(faltaGratis)} para frete grátis em rota.</p>
+            <p className="muted">Faltam {brl(faltaGratis)} para frete grátis em rota.</p>
           )}
           <div className="space-y-2">
             {frete?.opcoes.map((o) => (
-              <label key={chave(o)} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${escolha === chave(o) ? "border-brand-500 bg-brand-50" : "border-stone-200"}`}>
+              <label key={chave(o)} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${escolha === chave(o) ? "border-pine-700 bg-pine-50" : "border-line"}`}>
                 <input type="radio" name="ent" checked={escolha === chave(o)} onChange={() => { escolhaManual.current = true; setEscolha(chave(o)); }} className="mt-1" />
                 <div className="flex-1">
-                  <div className="font-medium">{o.titulo}</div>
-                  <div className="text-xs text-stone-500">{o.tipo === "retirada" ? lojaEndereco : o.descricao}</div>
+                  <div className="font-bold">{o.titulo}</div>
+                  <div className="muted">{o.tipo === "retirada" ? lojaEndereco : o.descricao}</div>
                 </div>
-                <div className="font-semibold">{o.taxa_centavos === 0 ? "Grátis" : brl(o.taxa_centavos)}</div>
+                <div className="font-extrabold">{o.taxa_centavos === 0 ? "Grátis" : brl(o.taxa_centavos)}</div>
               </label>
             ))}
           </div>
@@ -174,16 +174,16 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
 
         {/* Pagamento */}
         <section className="card space-y-3">
-          <h2 className="font-semibold">3. Pagamento</h2>
+          <h2 className="h2">Pagamento</h2>
           <div className="grid gap-2 sm:grid-cols-3">
             {([["pix", "PIX"], ["dinheiro", "Dinheiro na entrega"], ["cartao_entrega", "Cartão na entrega"]] as const).map(([v, l]) => (
-              <label key={v} className={`cursor-pointer rounded-lg border p-3 text-center text-sm ${pagamento === v ? "border-brand-500 bg-brand-50" : "border-stone-200"}`}>
+              <label key={v} className={`cursor-pointer rounded-lg border p-3 text-center text-sm ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-line"}`}>
                 <input type="radio" className="sr-only" checked={pagamento === v} onChange={() => setPagamento(v)} />{l}
               </label>
             ))}
           </div>
           {pagamento === "pix" && pixChave && (
-            <p className="text-xs text-stone-600">Chave PIX: <b>{pixChave}</b>. O pedido é confirmado após o pagamento.</p>
+            <p className="text-sm text-ink-2">Chave PIX: <b>{pixChave}</b>. O pedido é confirmado após o pagamento.</p>
           )}
           {pagamento === "dinheiro" && (
             <div><label className="label">Troco para (R$, opcional)</label><input className="input" inputMode="decimal" value={troco} onChange={(e) => setTroco(e.target.value)} placeholder="ex.: 200" /></div>
@@ -193,7 +193,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
       </div>
 
       <aside className="card h-fit space-y-3 md:sticky md:top-20">
-        <h2 className="font-semibold">Resumo</h2>
+        <h2 className="h2">Resumo</h2>
         <ul className="space-y-1 text-sm">
           {itens.map((i) => (
             <li key={i.id} className="flex justify-between gap-2"><span className="truncate">{i.qtd}× {i.nome}</span><span>{brl(i.preco_centavos * i.qtd)}</span></li>
@@ -201,7 +201,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
         </ul>
         <div className="border-t pt-2">
           {cupom ? (
-            <div className="flex items-center justify-between rounded-lg bg-green-50 p-2 text-sm text-green-800">
+            <div className="flex items-center justify-between rounded-xl bg-pine-50 p-2.5 text-sm text-pine-800">
               <span>🎟️ {cupom.codigo}{cupom.descricao ? ` · ${cupom.descricao}` : ""}</span>
               <button className="text-xs underline" onClick={() => { setCupom(null); setCupomInput(""); }}>remover</button>
             </div>
@@ -217,19 +217,19 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           <div className="flex justify-between"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
           <div className="flex justify-between"><span>Frete</span><span>{opcao ? (freteFinal === 0 ? "Grátis" : brl(freteFinal)) : "—"}</span></div>
           {desconto > 0 && <div className="flex justify-between text-green-700"><span>Desconto</span><span>−{brl(desconto)}</span></div>}
-          <div className="mt-1 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
+          <div className="mt-1 flex justify-between text-lg font-extrabold"><span>Total</span><span>{brl(total)}</span></div>
         </div>
-        {erro && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{erro}</p>}
+        {erro && <p className="rounded-xl bg-red-50 p-2.5 text-sm font-semibold text-red-700">{erro}</p>}
         <button className="btn-primary hidden w-full md:flex" disabled={pending || !opcao || carregandoFrete} onClick={enviar}>
           {pending ? "Enviando..." : "Confirmar pedido"}
         </button>
       </aside>
 
       {/* barra fixa no celular */}
-      <div className="fixed inset-x-0 bottom-16 z-20 border-t border-stone-200 bg-white p-3 md:hidden">
+      <div className="fixed inset-x-0 bottom-16 z-20 border-t border-line bg-white p-3 md:hidden">
         {erro && <p className="mb-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">{erro}</p>}
         <div className="flex items-center gap-3">
-          <div><div className="text-xs text-stone-500">Total</div><div className="text-lg font-bold">{brl(total)}</div></div>
+          <div><div className="muted">Total</div><div className="text-lg font-extrabold">{brl(total)}</div></div>
           <button className="btn-primary flex-1" disabled={pending || !opcao || carregandoFrete} onClick={enviar}>
             {pending ? "Enviando..." : "Confirmar pedido"}
           </button>

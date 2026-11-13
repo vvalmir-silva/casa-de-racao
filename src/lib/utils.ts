@@ -29,12 +29,12 @@ export function slugify(s: string) {
 }
 
 export const STATUS_PEDIDO: Record<string, { label: string; cor: string }> = {
-  aguardando_pagamento: { label: "Aguardando pagamento", cor: "bg-yellow-100 text-yellow-800" },
-  pago: { label: "Pago", cor: "bg-blue-100 text-blue-800" },
-  separado: { label: "Separado", cor: "bg-indigo-100 text-indigo-800" },
-  em_rota: { label: "Em rota", cor: "bg-purple-100 text-purple-800" },
-  entregue: { label: "Entregue", cor: "bg-green-100 text-green-800" },
-  cancelado: { label: "Cancelado", cor: "bg-gray-200 text-gray-700" },
+  aguardando_pagamento: { label: "Aguardando pagamento", cor: "bg-kibble-100 text-ink" },
+  pago: { label: "Pago", cor: "bg-sky-100 text-sky-900" },
+  separado: { label: "Separado", cor: "bg-indigo-100 text-indigo-900" },
+  em_rota: { label: "Em rota", cor: "bg-violet-100 text-violet-900" },
+  entregue: { label: "Entregue", cor: "bg-pine-100 text-pine-800" },
+  cancelado: { label: "Cancelado", cor: "bg-line text-ink-3" },
 };
 
 export const TIPO_ENTREGA: Record<string, string> = {
