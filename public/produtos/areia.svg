@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<rect width="400" height="400" rx="24" fill="#eff6ff"/>
+<ellipse cx="200" cy="356" rx="120" ry="14" fill="#000" opacity=".08"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v252 q0 22-22 22 H132 q-22 0-22-22z" fill="#3b82f6"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v24 H110z" fill="#1d4ed8"/>
+<rect x="110" y="94" width="180" height="10" fill="#000" opacity=".12"/>
+<rect x="130" y="128" width="140" height="150" rx="16" fill="#fff" opacity=".92"/>
+<g transform="translate(200 203)"><path d="M-62 10 h124 l-10 36 h-104z" fill="#60a5fa"/><ellipse cy="10" rx="62" ry="14" fill="#93c5fd"/><circle cx="-40" cy="8" r="4" fill="#e0f2fe"/><circle cx="-20" cy="2" r="4" fill="#e0f2fe"/><circle cx="0" cy="10" r="4" fill="#e0f2fe"/><circle cx="20" cy="0" r="4" fill="#e0f2fe"/><circle cx="40" cy="8" r="4" fill="#e0f2fe"/><circle cx="-30" cy="-4" r="4" fill="#e0f2fe"/><circle cx="10" cy="-6" r="4" fill="#e0f2fe"/><circle cx="30" cy="-2" r="4" fill="#e0f2fe"/><circle cx="-10" cy="12" r="4" fill="#e0f2fe"/><path d="M-44-40 q44-24 88 0" stroke="#3b82f6" stroke-width="6" fill="none" stroke-linecap="round"/></g>
+<text x="200" y="300" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">AREIA SANITÁRIA</text>
+<text x="200" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#fff" text-anchor="middle" opacity=".9">alta absorção</text>
+<path d="M118 324 h164" stroke="#fff" stroke-width="2" opacity=".35" stroke-dasharray="6 6"/>
+</svg>

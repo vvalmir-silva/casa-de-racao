@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<rect width="400" height="400" rx="24" fill="#f0fdf4"/>
+<ellipse cx="200" cy="356" rx="120" ry="14" fill="#000" opacity=".08"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v252 q0 22-22 22 H132 q-22 0-22-22z" fill="#22c55e"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v24 H110z" fill="#15803d"/>
+<rect x="110" y="94" width="180" height="10" fill="#000" opacity=".12"/>
+<rect x="130" y="128" width="140" height="150" rx="16" fill="#fff" opacity=".92"/>
+<g transform="translate(200 203)"><ellipse cx="4" cy="12" rx="40" ry="30" fill="#fbbf24"/><circle cx="-18" cy="-18" r="24" fill="#fde68a"/><path d="M-44-20 l-16 4 l16 8z" fill="#f97316"/><circle cx="-14" cy="-22" r="4" fill="#1c1917"/><path d="M-10-50 q4-16 14-10 q-4 6-6 14z" fill="#f97316"/><path d="M30 0 q20 10 24 30 q-14-6-28-12z" fill="#f59e0b"/><path d="M8 40 v14 M18 40 v14" stroke="#f97316" stroke-width="3" stroke-linecap="round"/></g>
+<text x="200" y="300" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">AVES</text>
+<text x="200" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#fff" text-anchor="middle" opacity=".9">mistura de sementes</text>
+<path d="M118 324 h164" stroke="#fff" stroke-width="2" opacity=".35" stroke-dasharray="6 6"/>
+</svg>

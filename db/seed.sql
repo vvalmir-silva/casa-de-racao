@@ -63,3 +63,19 @@ INSERT INTO usuarios (nome, telefone, email, senha_hash, papel) VALUES
   ('Administrador', '11999999999', 'admin@casaderacao.local', crypt('admin123', gen_salt('bf', 10)), 'admin'),
   ('Motorista',     '11988888888', 'motorista@casaderacao.local', crypt('moto123', gen_salt('bf', 10)), 'motorista')
 ON CONFLICT (telefone) DO NOTHING;
+
+-- Ilustrações padrão (public/produtos/*.svg)
+UPDATE produtos SET imagem_url = CASE slug
+  WHEN 'racao-premium-caes-adultos-15kg' THEN '/produtos/racao-cao.svg'
+  WHEN 'racao-caes-adultos-3kg' THEN '/produtos/racao-cao.svg'
+  WHEN 'racao-caes-filhotes-10kg' THEN '/produtos/racao-cao-filhote.svg'
+  WHEN 'racao-gatos-castrados-10kg' THEN '/produtos/racao-gato.svg'
+  WHEN 'racao-gatos-adultos-3kg' THEN '/produtos/racao-gato.svg'
+  WHEN 'sache-gatos-85g-cx12' THEN '/produtos/sache-gato.svg'
+  WHEN 'mistura-calopsita-500g' THEN '/produtos/racao-ave.svg'
+  WHEN 'racao-papagaio-700g' THEN '/produtos/racao-ave.svg'
+  WHEN 'alpiste-1kg' THEN '/produtos/sementes.svg'
+  WHEN 'bifinho-caes-500g' THEN '/produtos/petisco.svg'
+  WHEN 'areia-sanitaria-4kg' THEN '/produtos/areia.svg'
+  ELSE imagem_url END
+WHERE imagem_url IS NULL;

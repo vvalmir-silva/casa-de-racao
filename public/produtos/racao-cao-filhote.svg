@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<rect width="400" height="400" rx="24" fill="#fff7ed"/>
+<ellipse cx="200" cy="356" rx="120" ry="14" fill="#000" opacity=".08"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v252 q0 22-22 22 H132 q-22 0-22-22z" fill="#f59e0b"/>
+<path d="M110 70 q0-22 22-22 h136 q22 0 22 22 v24 H110z" fill="#d97706"/>
+<rect x="110" y="94" width="180" height="10" fill="#000" opacity=".12"/>
+<rect x="130" y="128" width="140" height="150" rx="16" fill="#fff" opacity=".92"/>
+<g transform="translate(200 203)"><circle r="40" fill="#f59e0b"/><ellipse cx="-40" cy="-6" rx="12" ry="24" fill="#d97706"/><ellipse cx="40" cy="-6" rx="12" ry="24" fill="#d97706"/><circle cx="-13" cy="-6" r="6" fill="#1c1917"/><circle cx="13" cy="-6" r="6" fill="#1c1917"/><ellipse cy="12" rx="8" ry="5" fill="#1c1917"/><path d="M-8 20 q8 8 16 0" stroke="#1c1917" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="-11" cy="-8" r="2" fill="#fff"/><circle cx="15" cy="-8" r="2" fill="#fff"/></g>
+<text x="200" y="300" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">RAÇÃO FILHOTES</text>
+<text x="200" y="322" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#fff" text-anchor="middle" opacity=".9">até 12 meses</text>
+<path d="M118 324 h164" stroke="#fff" stroke-width="2" opacity=".35" stroke-dasharray="6 6"/>
+</svg>
