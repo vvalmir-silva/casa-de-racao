@@ -121,6 +121,13 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
   if (input.forma_pagamento === "dinheiro" && input.troco_para_centavos && input.troco_para_centavos < total) {
     throw new ErroPedido("Valor para troco menor que o total.");
   }
+  if (input.forma_pagamento === "dinheiro" && input.troco_para_centavos) {
+    const { getConfig } = await import("./db");
+    const limite = Number((await getConfig()).troco_maximo_centavos ?? 10000);
+    if (limite > 0 && input.troco_para_centavos - total > limite) {
+      throw new ErroPedido(`O entregador leva no máximo R$ ${(limite / 100).toFixed(2).replace(".", ",")} de troco. Ajuste o valor ou pague por PIX/cartão.`);
+    }
+  }
 
   return comTransacao(async (q) => {
     // salva endereço novo se pedido

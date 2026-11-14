@@ -20,9 +20,9 @@ type Frete = { atende: boolean; zona: { nome: string } | null; opcoes: Opcao[] }
 
 const vazio = { apelido: "Casa", cep: "", logradouro: "", numero: "", complemento: "", sem_complemento: false, bairro: "", cidade: "", uf: "", referencia: "" };
 
-export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo, regraPagarDepois, prazoRetiradaHoras = 0 }: {
+export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo, regraPagarDepois, prazoRetiradaHoras = 0, trocoMaximo = 0 }: {
   enderecos: EnderecoSalvo[]; pixChave: string; lojaEndereco: string; freteGratisMinimo: number;
-  regraPagarDepois: { liberado: boolean; motivo?: string; valorMax: number }; prazoRetiradaHoras?: number;
+  regraPagarDepois: { liberado: boolean; motivo?: string; valorMax: number }; prazoRetiradaHoras?: number; trocoMaximo?: number;
 }) {
   const { itens, subtotal, peso, pronto, limpar } = useCarrinho();
   const router = useRouter();
@@ -34,6 +34,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const [escolha, setEscolha] = useState<string>("");
   const [pagamento, setPagamento] = useState<FormaPagamento>("pix");
   const [troco, setTroco] = useState("");
+  const trocoCentavos = troco ? Math.round(Number(troco.replace(",", ".")) * 100) || 0 : 0;
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState("");
   const [pending, start] = useTransition();
@@ -117,6 +118,10 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
     if (opcao.tipo !== "retirada" && enderecoId === "novo" && !novo.complemento.trim() && !novo.sem_complemento) {
       document.getElementById("ck-complemento")?.focus();
       return setErro("Informe o complemento (apto, bloco) ou marque “É casa, sem complemento”.");
+    if (pagamento === "dinheiro" && trocoCentavos > 0) {
+      if (trocoCentavos < total) return setErro("O valor para troco é menor que o total.");
+      if (trocoMaximo > 0 && trocoCentavos - total > trocoMaximo) return setErro(`O entregador leva no máximo ${brl(trocoMaximo)} de troco. Informe um valor menor ou pague por PIX/cartão.`);
+    }
     }
     const payload = {
       itens: itens.map((i) => ({ id: i.id, qtd: i.qtd })),
@@ -228,7 +233,8 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
             <p className="text-sm text-ink-2">Chave PIX: <b>{pixChave}</b>. O pedido é confirmado após o pagamento.</p>
           )}
           {pagamento === "dinheiro" && (
-            <div><label className="label" htmlFor="ck-troco-para-r-opcional">Troco para (R$, opcional)</label><input id="ck-troco-para-r-opcional" className="input" inputMode="decimal" value={troco} onChange={(e) => setTroco(e.target.value)} placeholder="ex.: 200" /></div>
+            <div><label className="label" htmlFor="ck-troco-para-r-opcional">Troco para (R$, opcional)</label><input id="ck-troco-para-r-opcional" className="input" inputMode="decimal" value={troco} onChange={(e) => setTroco(e.target.value)} placeholder="ex.: 200" aria-describedby="ck-troco-dica" />
+              <p id="ck-troco-dica" className="mt-1 text-xs text-ink-3">{trocoMaximo > 0 ? `O entregador leva até ${brl(trocoMaximo)} de troco.` : "Deixe em branco se tiver o valor certo."}{trocoCentavos > total ? ` Troco: ${brl(trocoCentavos - total)}.` : ""}</p></div>
           )}
           <div><label className="label" htmlFor="ck-observacoes">Observações</label><textarea id="ck-observacoes" className="input" rows={2} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Portão azul, deixar com o porteiro..." /></div>
         </section>

@@ -1,6 +1,8 @@
 import { sql } from "@/lib/db";
 import { brl, dataBR, TIPO_ENTREGA, FORMA_PAGAMENTO } from "@/lib/utils";
 import { partesLocais, somarDias } from "@/lib/frete";
+import { custosDeEntrega } from "@/lib/custo-entrega";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +66,7 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
     SELECT count(*)::int AS n FROM (SELECT cliente_id FROM pedidos WHERE status <> 'cancelado' AND (criado_em AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN ${de}::date AND ${ate}::date GROUP BY cliente_id HAVING count(*) > 1) t
   `) as { n: number }[];
 
+  const ent = await custosDeEntrega(de, ate);
   const margem = r.custo > 0 ? r.receita - r.frete - r.custo : null;
   const maxDia = Math.max(1, ...porDia.map((d) => d.receita));
 
@@ -101,6 +104,41 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
         <Card t="Cancelados" v={String(r.cancelados)} />
         <Card t="Média por dia" v={brl(porDia.length ? Math.round(r.receita / porDia.length) : 0)} s={`${porDia.length} dias com venda`} />
       </div>
+
+      <section className="card space-y-4" data-testid="lucro-entrega">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="h2">Entrega e lucro real</h3>
+          <Link href="/admin/config#cf-custo-entrega" className="ml-auto text-sm font-semibold text-pine-700 underline">Ajustar custos</Link>
+        </div>
+        {!ent.configurado ? (
+          <p className="rounded-xl bg-kibble-50 px-3 py-2 text-sm">Informe quanto custa cada entrega em <b>Configurações → Entrega: custo e segurança</b> para ver o lucro real e os pedidos que deram prejuízo.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div><div className="text-xs text-ink-3">Custo das entregas</div><div className="text-xl font-bold">{brl(ent.custoEntregas + ent.custoFalhas)}</div><div className="text-xs text-ink-3">{ent.entregas} entregas{ent.entregas ? ` · ${brl(Math.round(ent.custoEntregas / ent.entregas))} cada` : ""}</div></div>
+              <div><div className="text-xs text-ink-3">Frete cobrado − custo</div><div className={`text-xl font-bold ${ent.freteCobrado - ent.custoEntregas < 0 ? "text-oferta" : ""}`}>{brl(ent.freteCobrado - ent.custoEntregas)}</div><div className="text-xs text-ink-3">{ent.fretesNoVermelho} entrega(s) com frete abaixo do custo</div></div>
+              <div><div className="text-xs text-ink-3">Tentativas sem sucesso</div><div className="text-xl font-bold">{ent.tentativasFalhas}</div><div className="text-xs text-ink-3">perda de {brl(ent.custoFalhas)}</div></div>
+              <div><div className="text-xs text-ink-3">Lucro real</div><div className={`text-xl font-bold ${ent.lucroReal < 0 ? "text-oferta" : "text-pine-700"}`}>{brl(ent.lucroReal)}</div><div className="text-xs text-ink-3">{ent.lucroCompleto ? "vendas − produtos − entregas" : "alguns produtos sem custo (conta como 0)"}</div></div>
+            </div>
+            {ent.porZona.length > 0 && (
+              <table className="table table-cards"><thead><tr><th>Zona</th><th className="text-right">Entregas</th><th className="text-right">Frete cobrado</th><th className="text-right">Custo</th><th className="text-right">Saldo</th></tr></thead>
+                <tbody>{ent.porZona.map((z) => (
+                  <tr key={z.zona}><td className="font-semibold">{z.zona}</td><td data-label="Entregas" className="sm:text-right">{z.entregas}</td><td data-label="Frete" className="sm:text-right">{brl(z.frete)}</td><td data-label="Custo" className="sm:text-right">{brl(z.custo)}</td><td data-label="Saldo" className={`font-bold sm:text-right ${z.frete - z.custo < 0 ? "text-oferta" : ""}`}>{brl(z.frete - z.custo)}</td></tr>
+                ))}</tbody></table>
+            )}
+            <div>
+              <h4 className="mb-2 font-extrabold">Pedidos que deram prejuízo ({ent.prejuizo.length})</h4>
+              {ent.prejuizo.length === 0 ? <p className="muted">Nenhum pedido no vermelho no período{ent.lucroCompleto ? "" : " (só contam pedidos com custo de todos os produtos)"}. 👍</p> : (
+                <table className="table table-cards"><thead><tr><th>Pedido</th><th className="text-right">Venda</th><th className="text-right">Produtos</th><th className="text-right">Entrega</th><th className="text-right">Resultado</th></tr></thead>
+                  <tbody>{ent.prejuizo.map((x) => (
+                    <tr key={x.id}><td><Link className="font-semibold text-pine-700 underline" href={`/admin/pedidos?q=${x.numero}`}>#{x.numero}</Link> <span className="text-ink-3">{x.cliente} · {x.zona ?? TIPO_ENTREGA[x.tipo_entrega]}</span></td><td data-label="Venda" className="sm:text-right">{brl(x.total)}</td><td data-label="Produtos" className="sm:text-right">{brl(x.custo_produtos)}</td><td data-label="Entrega" className="sm:text-right">{brl(x.custo_entrega)}</td><td data-label="Resultado" className="font-bold text-oferta sm:text-right">{brl(x.lucro)}</td></tr>
+                  ))}</tbody></table>
+              )}
+              <p className="mt-2 text-xs text-ink-3">Dica: se uma zona aparece no vermelho, aumente a taxa dela ou o pedido mínimo para frete grátis.</p>
+            </div>
+          </>
+        )}
+      </section>
 
       <div className="card">
         <h3 className="h2 mb-3">Receita por dia</h3>

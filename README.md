@@ -72,6 +72,13 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 - **Faltas:** "Não retirou" / "Não recebeu" em Admin → Pedidos e "Não consegui entregar" na tela do motorista cancelam, devolvem estoque e contam falta.
 - A limpeza roda no cron diário e, no máximo 1x/min, ao abrir a loja, o checkout ou o painel (`src/lib/protecoes.ts`). PIX aprovado em pedido já cancelado gera alerta para a loja.
 
+## Entrega: custo, caixa e segurança
+
+- **Custo da entrega** (Configurações → Entrega): custo por parada, custo fixo por rota (dividido entre as paradas visitadas) e custo de uma expressa. Relatórios mostram custo das entregas, frete cobrado − custo por zona, tentativas sem sucesso, **lucro real** e a lista de pedidos que deram prejuízo.
+- **Confirmação de presença**: ao criar a rota, o cliente recebe no WhatsApp um link `/confirmar/{id}?t=…` (HMAC com `SESSION_SECRET`, sem login). “Sim” marca ✓; “Não” tira o pedido da rota (volta para “prontos”, com aviso) e manda push para a loja. Botões “Pedir confirmação” e “Não confirmados para o fim” na rota e no app do motorista.
+- **Limite de troco**: `troco_maximo_centavos` (padrão R$ 100). Checkout e servidor recusam troco acima disso. A rota mostra quanto de troco o motorista precisa levar.
+- **Acerto de caixa**: em Rotas, a loja confere dinheiro e cartão trazidos pelo motorista contra o esperado (pedidos entregues em dinheiro/cartão). Diferença exige observação e fica registrada (`acertos_caixa`). O motorista vê quanto deve prestar de contas.
+
 ## Layout da loja
 
 - **Cores:** azul-petróleo (`pine`, cor principal) e tangerina (`kibble`, destaque), vermelho `oferta` para descontos. Tokens em `tailwind.config.ts`.

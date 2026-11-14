@@ -4,14 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { brl, FORMA_PAGAMENTO } from "@/lib/utils";
 import { linksMaps, formatarDistancia, formatarDuracao } from "@/lib/rota-cliente";
-import { reordenarRota, otimizarRotaAction, registrarFalta } from "../admin/actions";
+import { reordenarRota, otimizarRotaAction, registrarFalta, naoConfirmadosParaFim } from "../admin/actions";
+import { SeloConfirmacao } from "@/components/SeloConfirmacao";
 import { BotaoAction } from "@/components/FormAction";
 import { iniciarRota, concluirRota } from "./actions";
 import { EntregaForm } from "./EntregaForm";
 import { vizinhosDeEndereco, rotuloComplemento } from "@/lib/mesmo-endereco";
-import type { RotaDoDia } from "./page";
+import type { RotaDoDia, Caixa } from "./page";
 
-export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoDia; origem: string; fotoObrigatoria: boolean }) {
+export function RotaMotorista({ rota, origem, fotoObrigatoria, caixa }: { rota: RotaDoDia; origem: string; fotoObrigatoria: boolean; caixa: Caixa }) {
   const [p, start] = useTransition();
   const router = useRouter();
   const [ordem, setOrdem] = useState(rota.paradas.map((x) => x.id));
@@ -68,13 +69,31 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
           )}
           {rota.status !== "concluida" && links.map((l, i) => <a key={l} className="btn-outline flex-1" href={l} target="_blank">{links.length > 1 ? `Rota no Maps ${i + 1}/${links.length}` : "Rota completa no Maps"}</a>)}
         </div>
+        {rota.status !== "concluida" && pendentes.some((x) => x.confirmacao !== "sim") && pendentes.some((x) => x.confirmacao === "sim") && (
+          <button className="btn-ghost w-full min-h-[40px] text-sm" disabled={p} onClick={() => start(async () => { const r = await naoConfirmadosParaFim(rota.id); if (r.erro) setMsg(r.erro); else { setMsg(""); router.refresh(); } })}>
+            Deixar quem não confirmou para o fim
+          </button>
+        )}
         {msg && <p className="rounded-xl bg-kibble-50 px-3 py-2 text-sm">{msg}</p>}
+        {rota.status === "planejada" && caixa.troco > 0 && (
+          <p className="rounded-xl bg-kibble-50 px-3 py-2 text-sm">💰 Leve <b>{brl(caixa.troco)}</b> de troco.</p>
+        )}
+        {(caixa.dinheiro > 0 || caixa.cartao > 0) && (
+          <div className="rounded-xl bg-page px-3 py-2 text-sm" data-testid="prestar-contas">
+            <div className="flex items-center justify-between gap-2"><b>Prestar contas na loja</b>
+              {caixa.conferido ? (caixa.diferenca === 0 ? <span className="badge bg-pine-100 text-pine-800">✓ conferido</span> : <span className="badge bg-oferta-50 text-oferta">diferença {brl(caixa.diferenca)}</span>) : <span className="badge bg-kibble-50 text-ink">a conferir</span>}
+            </div>
+            <div className="text-ink-2">💵 Dinheiro {brl(caixa.dinheiro)} · 💳 Cartão {brl(caixa.cartao)}{caixa.troco > 0 ? ` · devolva também o troco (${brl(caixa.troco)})` : ""}</div>
+          </div>
+        )}
       </div>
 
       {prox && ativa && (
         <div className="rounded-2xl bg-pine-700 p-4 text-white">
           <div className="text-[13px] font-bold text-kibble-400">Próxima parada</div>
           <div className="mt-0.5 text-lg font-extrabold">#{prox.numero} · {prox.cliente}</div>
+          {prox.confirmacao === "nao" && <div className="mt-1 rounded-lg bg-oferta px-2 py-1 text-sm font-bold">✗ Cliente avisou que não vai estar — ligue antes de ir</div>}
+          {prox.confirmacao === "sim" && <div className="mt-1 text-sm font-bold text-kibble-400">✓ Cliente confirmou que vai estar</div>}
           <div className="text-sm text-pine-100">{endTxt(prox.endereco)}</div>
           <div className="mt-1 inline-block rounded-lg bg-white/15 px-2 py-0.5 text-[15px] font-extrabold">{rotuloComplemento(prox.endereco)}</div>
           <AvisoMesmoEndereco id={prox.id} escuro />
@@ -100,7 +119,7 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
               <div className="flex items-start gap-3">
                 <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-extrabold ${feito ? "bg-pine-500 text-white" : "bg-page text-ink"}`}>{feito ? "✓" : i + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold">#{x.numero} · {x.cliente}{x.inicio ? <span className="ml-1 font-semibold text-ink-3">{x.inicio.slice(0, 5)}–{x.fim?.slice(0, 5)}</span> : null}</div>
+                  <div className="font-bold">#{x.numero} · {x.cliente} {!feito && <SeloConfirmacao valor={x.confirmacao} />}{x.inicio ? <span className="ml-1 font-semibold text-ink-3">{x.inicio.slice(0, 5)}–{x.fim?.slice(0, 5)}</span> : null}</div>
                   <div className="text-ink-2">{x.endereco.logradouro}, {x.endereco.numero} · <b className="text-ink">{rotuloComplemento(x.endereco)}</b> · {x.endereco.bairro}</div>
                   {x.endereco.referencia && <div className="text-ink-3">Ref.: {x.endereco.referencia}</div>}
                   <div className="text-ink-3">{x.itens}</div>

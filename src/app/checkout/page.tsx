@@ -20,7 +20,7 @@ export default async function CheckoutPage() {
   return (
     <div>
       <h1 className="h1 mb-4">Fechar pedido</h1>
-      <CheckoutForm enderecos={enderecos} pixChave={cfg.pix_chave ?? ""} lojaEndereco={cfg.loja_endereco ?? ""} freteGratisMinimo={Number(cfg.frete_gratis_minimo_centavos ?? 0)} regraPagarDepois={regra} prazoRetiradaHoras={Number(cfg.retirada_prazo_cancelar_horas ?? 48) || 0} />
+      <CheckoutForm enderecos={enderecos} pixChave={cfg.pix_chave ?? ""} lojaEndereco={cfg.loja_endereco ?? ""} freteGratisMinimo={Number(cfg.frete_gratis_minimo_centavos ?? 0)} regraPagarDepois={regra} prazoRetiradaHoras={Number(cfg.retirada_prazo_cancelar_horas ?? 48) || 0} trocoMaximo={Number(cfg.troco_maximo_centavos ?? 10000) || 0} />
     </div>
   );
 }

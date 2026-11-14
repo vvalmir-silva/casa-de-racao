@@ -50,6 +50,14 @@ export default async function ConfigAdmin() {
         <div><label className="label">Lembrar de retirar após (horas)</label><input name="retirada_lembrete_horas" className="input" inputMode="numeric" defaultValue={c.retirada_lembrete_horas ?? "24"} /></div>
         <div><label className="label">Lembrete de carrinho após (horas)</label><input name="carrinho_lembrete_horas" className="input" inputMode="numeric" defaultValue={c.carrinho_lembrete_horas ?? "20"} /></div>
 
+        <h2 className="h2 col-span-full mt-3">Entrega: custo e segurança</h2>
+        <p className="col-span-full -mt-1 text-xs text-ink-3">O custo entra no lucro real dos Relatórios. Ex.: motoboy cobra R$ 8 por entrega → “Custo por entrega” 8. Paga uma diária de R$ 80 → “Custo fixo por rota” 80.</p>
+        <div><label className="label" htmlFor="cf-custo-entrega">Custo por entrega (R$)</label><input id="cf-custo-entrega" name="custo_entrega_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "custo_entrega_centavos")} /></div>
+        <div><label className="label" htmlFor="cf-custo-rota">Custo fixo por rota (R$)</label><input id="cf-custo-rota" name="custo_rota_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "custo_rota_centavos")} /></div>
+        <div><label className="label" htmlFor="cf-custo-expresso">Custo de uma expressa (R$)</label><input id="cf-custo-expresso" name="custo_expresso_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "custo_expresso_centavos")} /></div>
+        <div><label className="label" htmlFor="cf-troco-max">Troco máximo que o entregador leva (R$)</label><input id="cf-troco-max" name="troco_maximo_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "troco_maximo_centavos")} /></div>
+        <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="confirmacao_automatica" defaultChecked={(c.confirmacao_automatica ?? "true") === "true"} /> Ao montar a rota, perguntar no WhatsApp se o cliente vai estar em casa</label>
+
         <h2 className="h2 col-span-full mt-3">Vitrine e rodapé</h2>
         <div><label className="label">Parcelamento no cartão (máx. de parcelas)</label><input name="parcelas_max" className="input" inputMode="numeric" defaultValue={c.parcelas_max ?? "1"} /></div>
         <div><label className="label">Parcela mínima (R$)</label><input name="parcela_minima_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "parcela_minima_centavos")} /></div>

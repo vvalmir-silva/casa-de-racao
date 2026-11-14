@@ -9,6 +9,9 @@ import { cancelarPedido, ErroPedido } from "@/lib/pedidos";
 import { slugify } from "@/lib/utils";
 import { notificarPedido } from "@/lib/whatsapp";
 import { otimizarRota } from "@/lib/rota";
+import { after } from "next/server";
+import { getConfig } from "@/lib/db";
+import { pedirConfirmacao } from "@/lib/confirmacao";
 
 type R = { ok?: true; erro?: string };
 
@@ -134,12 +137,63 @@ export async function criarRota(fd: FormData): Promise<R> {
     );
     let i = 1;
     for (const row of ord.rows) {
-      await q(`UPDATE pedidos SET rota_id = $1, ordem_rota = $2, status = CASE WHEN status = 'pago' THEN 'separado' ELSE status END WHERE id = $3`, [rotaId, i++, row.id]);
+      await q(`UPDATE pedidos SET rota_id = $1, ordem_rota = $2, confirmacao = NULL, confirmacao_em = NULL, confirmacao_pedida_em = NULL, status = CASE WHEN status = 'pago' THEN 'separado' ELSE status END WHERE id = $3`, [rotaId, i++, row.id]);
     }
     return rotaId;
   });
   try { await otimizarRota(rotaId); } catch (e) { console.error("otimizarRota", e); }
+  if ((await getConfig()).confirmacao_automatica !== "false") {
+    after(() => pedirConfirmacao(rotaId).catch((e) => console.error("pedirConfirmacao", e)));
+  }
   revalidatePath("/admin/rotas"); revalidatePath("/motorista");
+  return { ok: true };
+}
+
+/** Manda (ou reenvia) o WhatsApp “vai estar em casa?” para quem ainda não respondeu. */
+export async function pedirConfirmacaoAction(rotaId: string): Promise<R> {
+  await exigirSessao(["admin"]);
+  const n = await pedirConfirmacao(rotaId, true);
+  revalidatePath("/admin/rotas");
+  return n ? { ok: true } : { erro: "Todos os clientes desta rota já responderam." };
+}
+
+/** Joga para o fim da rota as paradas sem confirmação (ou que disseram não), mantendo a ordem entre elas. */
+export async function naoConfirmadosParaFim(rotaId: string): Promise<R> {
+  const s = await exigirSessao(["admin", "motorista"]);
+  const [r] = (await sql`SELECT motorista_id FROM rotas WHERE id = ${rotaId}`) as { motorista_id: string | null }[];
+  if (!r) return { erro: "Rota não encontrada." };
+  if (s.papel === "motorista" && r.motorista_id !== s.id) return { erro: "Rota de outro motorista." };
+  await sql`
+    UPDATE pedidos p SET ordem_rota = o.nova FROM (
+      SELECT id, row_number() OVER (ORDER BY (confirmacao IS DISTINCT FROM 'sim'), ordem_rota) AS nova
+      FROM pedidos WHERE rota_id = ${rotaId}
+    ) o WHERE p.id = o.id
+  `;
+  revalidatePath("/admin/rotas"); revalidatePath("/motorista");
+  return { ok: true };
+}
+
+/** Acerto de caixa: a loja confere o dinheiro e os comprovantes de cartão que o motorista trouxe. */
+export async function registrarAcerto(fd: FormData): Promise<R> {
+  const s = await exigirSessao(["admin"]);
+  const rotaId = String(fd.get("rota_id"));
+  const n = (k: string) => Math.round(Number(String(fd.get(k) ?? "0").replace(/\./g, "").replace(",", ".")) * 100) || 0;
+  const { esperadoDaRota } = await import("@/lib/acerto");
+  const esp = await esperadoDaRota(rotaId);
+  if (!esp) return { erro: "Rota não encontrada." };
+  const recebidoDinheiro = n("recebido_dinheiro"), recebidoCartao = n("recebido_cartao");
+  if (recebidoDinheiro < 0 || recebidoCartao < 0) return { erro: "Valores inválidos." };
+  const obs = String(fd.get("observacao") ?? "").trim().slice(0, 500) || null;
+  const dif = recebidoDinheiro + recebidoCartao - esp.dinheiro - esp.cartao;
+  if (dif !== 0 && !obs) return { erro: "Há diferença no caixa. Escreva uma observação explicando." };
+  await sql`
+    INSERT INTO acertos_caixa (rota_id, esperado_dinheiro, esperado_cartao, recebido_dinheiro, recebido_cartao, observacao, conferido_por)
+    VALUES (${rotaId}, ${esp.dinheiro}, ${esp.cartao}, ${recebidoDinheiro}, ${recebidoCartao}, ${obs}, ${s.id})
+    ON CONFLICT (rota_id) DO UPDATE SET esperado_dinheiro = EXCLUDED.esperado_dinheiro, esperado_cartao = EXCLUDED.esperado_cartao,
+      recebido_dinheiro = EXCLUDED.recebido_dinheiro, recebido_cartao = EXCLUDED.recebido_cartao, observacao = EXCLUDED.observacao,
+      conferido_por = EXCLUDED.conferido_por, conferido_em = now()
+  `;
+  revalidatePath("/admin/rotas"); revalidatePath("/admin/relatorios"); revalidatePath("/motorista");
   return { ok: true };
 }
 
@@ -261,7 +315,7 @@ export async function excluirJanela(id: number): Promise<R> {
 
 /* ---------- Configurações ---------- */
 const chavesPermitidas = new Set([
-  "retirada_prazo_cancelar_horas","retirada_lembrete_horas","pagar_depois_min_pedidos","pagar_depois_max_centavos","faltas_bloqueio","carrinho_lembrete_horas",
+  "retirada_prazo_cancelar_horas","retirada_lembrete_horas","pagar_depois_min_pedidos","pagar_depois_max_centavos","faltas_bloqueio","carrinho_lembrete_horas","custo_entrega_centavos","custo_rota_centavos","custo_expresso_centavos","troco_maximo_centavos","confirmacao_automatica",
   "avaliacao_auto_publicar","parcelas_max","parcela_minima_centavos","loja_instagram","loja_horario","loja_cnpj",
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
@@ -274,13 +328,14 @@ export async function salvarConfig(fd: FormData): Promise<R> {
     if (!chavesPermitidas.has(k)) continue;
     let val = String(v).trim();
     if (k.endsWith("_centavos")) val = String(Math.round(Number(val.replace(",", ".")) * 100));
-    if (k === "expresso_ativo" || k === "whatsapp_notificacoes" || k === "comprovante_obrigatorio" || k === "avaliacao_auto_publicar") val = val === "on" ? "true" : "false";
+    if (k === "expresso_ativo" || k === "whatsapp_notificacoes" || k === "comprovante_obrigatorio" || k === "avaliacao_auto_publicar" || k === "confirmacao_automatica") val = val === "on" ? "true" : "false";
     if (k === "loja_lat" || k === "loja_lng") val = val.replace(",", ".");
     await sql`INSERT INTO configuracoes (chave, valor) VALUES (${k}, ${val}) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor`;
   }
   if (!fd.has("expresso_ativo")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'expresso_ativo'`;
   if (!fd.has("whatsapp_notificacoes")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'whatsapp_notificacoes'`;
   if (!fd.has("comprovante_obrigatorio")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'comprovante_obrigatorio'`;
+  if (!fd.has("confirmacao_automatica")) await sql`INSERT INTO configuracoes (chave, valor) VALUES ('confirmacao_automatica', 'false') ON CONFLICT (chave) DO UPDATE SET valor = 'false'`;
   if (!fd.has("avaliacao_auto_publicar")) await sql`INSERT INTO configuracoes (chave, valor) VALUES ('avaliacao_auto_publicar', 'false') ON CONFLICT (chave) DO UPDATE SET valor = 'false'`;
   // endereço da loja mudou → recalcula coordenadas na próxima otimização
   if (fd.has("loja_endereco") && !String(fd.get("loja_lat") ?? "").trim()) await sql`UPDATE configuracoes SET valor = '' WHERE chave IN ('loja_lat','loja_lng')`;
