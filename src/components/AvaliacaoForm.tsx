@@ -1,18 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { FormAction } from "./FormAction";
 
 const rotulos = ["", "Ruim", "Fraco", "Ok", "Bom", "Excelente"];
 
 export function AvaliacaoForm({ pedidoId, action }: { pedidoId: string; action: (fd: FormData) => Promise<{ ok?: true; erro?: string }> }) {
   const [nota, setNota] = useState(0);
-  const [enviado, setEnviado] = useState(false);
-  if (enviado) {
-    return <div className="card text-center"><div className="text-2xl">🐾</div><div className="h2">Obrigado pela avaliação!</div><p className="muted">Sua opinião ajuda a loja a melhorar.</p></div>;
-  }
+  const router = useRouter();
+  const path = usePathname();
   return (
-    <FormAction action={action} onOk={() => setEnviado(true)} className="card space-y-3">
+    <FormAction action={action} onOk={() => router.replace(`${path}?avaliado=1`, { scroll: false })} className="card space-y-3">
       <div className="h2">Como foi sua compra?</div>
       <input type="hidden" name="pedido_id" value={pedidoId} />
       <input type="hidden" name="nota" value={nota || ""} />

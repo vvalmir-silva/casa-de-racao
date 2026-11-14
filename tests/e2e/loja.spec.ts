@@ -61,3 +61,20 @@ test("app instalável: manifest e service worker", async ({ request }) => {
   expect((await request.get("/sw.js")).ok()).toBe(true);
   expect((await request.get("/offline")).ok()).toBe(true);
 });
+
+test("busca sem acento e com erro de digitação, com sugestões", async ({ page }) => {
+  await page.goto("/");
+  const campo = page.getByRole("combobox", { name: "Buscar" });
+  await campo.fill("racao p/ cachorro filhote");
+  const sugestoes = page.getByRole("listbox", { name: "Sugestões" });
+  await expect(sugestoes.getByRole("option").first()).toContainText("Ração Cães Filhotes 10 kg");
+  await campo.fill("aipiste");
+  await expect(sugestoes.getByText("Alpiste 1 kg")).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/produto\/alpiste-1kg/);
+
+  await page.goto("/?q=gato");
+  await expect(page.getByRole("article")).toHaveCount(3);
+  await semErroNemOverflow(page);
+});

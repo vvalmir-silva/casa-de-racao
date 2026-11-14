@@ -51,11 +51,18 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 | Recuperar senha | Usa o WhatsApp configurado | Tela orienta a falar com a loja; admin troca a senha em Usuários |
 | Upload de fotos de produto | `BLOB_READ_WRITE_TOKEN` (Vercel Blob, criado automaticamente ao conectar o store) | Só URL da imagem |
 | Monitoramento de erros | `NEXT_PUBLIC_SENTRY_DSN` (Sentry, projeto `casa-de-racao`). Opcional: `SENTRY_AUTH_TOKEN` para enviar source maps | Erros só nos logs da Vercel |
+| Aviso de pedido novo no celular da loja (Web Push) | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere com `npx web-push generate-vapid-keys`). Ative em Admin → Resumo em cada aparelho; no iPhone, só com o app instalado | O card não aparece |
 | Visitas e velocidade | Ative *Web Analytics* e *Speed Insights* no painel do projeto na Vercel (o código já está pronto) | Nada é coletado |
 
 **Migrações:** novas alterações de banco ficam em `db/migrations/*.sql`. Aplique com `npm run db:migrate` ou acessando `/api/admin/migrar` logado como admin.
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
+
+## Busca, favoritos e comprar de novo
+
+- **Busca:** ignora acento e maiúsculas, tolera erro de digitação (pg_trgm) e entende "cachorro" → cães, "pássaro" → aves etc. (`src/lib/busca.ts`). Sugestões aparecem enquanto digita (`/api/busca`).
+- **Favoritos:** coração no card e na página do produto; lista em `/conta/favoritos` e carrossel na home.
+- **Comprar de novo:** botão no pedido e em Minha conta (último pedido entregue) que põe os itens no carrinho com preço e estoque de hoje; carrossel "Comprar de novo" na home para quem já comprou.
 
 ## Avaliações e SEO
 

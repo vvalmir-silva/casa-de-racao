@@ -4,6 +4,8 @@ import { sql } from "@/lib/db";
 import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, mascaraCep } from "@/lib/utils";
 import { logoutAction } from "../login/actions";
 import { EnderecoForm, ExcluirEnderecoBotao, LembretesToggle } from "./ContaClient";
+import { ComprarDeNovo } from "@/components/ComprarDeNovo";
+import { itensParaRepetir } from "@/lib/repetir";
 
 export const dynamic = "force-dynamic";
 
@@ -17,18 +19,24 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   const enderecos = (await sql`
     SELECT id, apelido, cep, logradouro, numero, complemento, bairro FROM enderecos WHERE usuario_id = ${s.id} ORDER BY padrao DESC, criado_em
   `) as { id: string; apelido: string; cep: string; logradouro: string; numero: string; complemento: string | null; bairro: string }[];
+  const ultimo = pedidos.find((p) => p.status === "entregue");
+  const repetir = ultimo ? await itensParaRepetir(ultimo.id) : null;
+  const [{ n: nFav }] = (await sql`SELECT count(*)::int AS n FROM favoritos WHERE usuario_id = ${s.id}`) as { n: number }[];
   const [me] = (await sql`SELECT aceita_lembretes FROM usuarios WHERE id = ${s.id}`) as { aceita_lembretes: boolean }[];
 
   return (
     <div className="space-y-6">
       {senha && <div className="rounded-xl bg-pine-50 px-4 py-3 text-sm font-semibold text-pine-800">Senha trocada. Você já está conectado.</div>}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="h1">Olá, {s.nome.split(" ")[0]}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/conta/favoritos" className="btn-outline">Favoritos{nFav ? ` (${nFav})` : ""}</Link>
           <Link href="/conta/assinaturas" className="btn-outline">Assinaturas</Link>
           <form action={logoutAction}><button className="btn-ghost">Sair</button></form>
         </div>
       </div>
+
+      {repetir && ultimo && <ComprarDeNovo compacto titulo={`Repetir o pedido #${ultimo.numero}`} itens={repetir.disponiveis} faltando={repetir.faltando} />}
 
       <section>
         <h2 className="h2 mb-3">Meus pedidos</h2>

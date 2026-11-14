@@ -6,6 +6,8 @@ import { CancelarPedidoBotao } from "../../ContaClient";
 import { hm } from "@/lib/frete";
 import { PixBox } from "@/components/PixBox";
 import { AvaliacaoForm } from "@/components/AvaliacaoForm";
+import { ComprarDeNovo } from "@/components/ComprarDeNovo";
+import { itensParaRepetir } from "@/lib/repetir";
 import { avaliarPedido } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +18,10 @@ type Pedido = {
   observacoes: string | null; comprovante_url: string | null; recebido_por: string | null; entregue_em: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
 };
 
-export default async function PedidoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ novo?: string }> }) {
+export default async function PedidoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ novo?: string; avaliado?: string }> }) {
   const s = await exigirSessao();
   const { id } = await params;
-  const { novo } = await searchParams;
+  const { novo, avaliado } = await searchParams;
   const rows = (await sql`
     SELECT p.*, j.inicio::text, j.fim::text FROM pedidos p LEFT JOIN janelas j ON j.id = p.janela_id
     WHERE p.id = ${id} AND (p.cliente_id = ${s.id} OR ${s.papel === "admin"})
@@ -30,6 +32,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
   const cfg = await getConfig();
   const st = STATUS_PEDIDO[p.status];
   const [aval] = (await sql`SELECT nota, comentario, resposta FROM avaliacoes WHERE pedido_id = ${id}`) as { nota: number; comentario: string | null; resposta: string | null }[];
+  const repetir = s.papel !== "admin" && ["entregue", "cancelado", "em_rota", "separado", "pago"].includes(p.status) ? await itensParaRepetir(p.id) : null;
   const podeAvaliar = p.status === "entregue" && !aval && s.papel !== "admin";
   const wa = cfg.loja_whatsapp ? `https://wa.me/${cfg.loja_whatsapp}?text=${encodeURIComponent(`Olá! Segue o comprovante do PIX do pedido #${p.numero}.`)}` : null;
 
@@ -61,6 +64,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
       {podeAvaliar && <div id="avaliar"><AvaliacaoForm pedidoId={p.id} action={avaliarPedido} /></div>}
       {aval && (
         <div className="card space-y-1">
+          {avaliado && <div className="mb-2 rounded-xl bg-pine-50 p-3 text-pine-800"><b>Obrigado pela avaliação! 🐾</b><div className="text-sm">Sua opinião ajuda a loja a melhorar.</div></div>}
           <div className="h2">Sua avaliação</div>
           <div className="text-xl text-kibble-500" aria-label={`${aval.nota} de 5 estrelas`}>{"★".repeat(aval.nota)}<span className="text-line-2">{"★".repeat(5 - aval.nota)}</span></div>
           {aval.comentario && <p className="text-sm text-ink-2">“{aval.comentario}”</p>}
@@ -90,6 +94,8 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
           <div className="flex justify-between text-lg font-extrabold"><span>Total</span><span>{brl(p.total_centavos)}</span></div>
         </div>
       </div>
+
+      {repetir && <ComprarDeNovo itens={repetir.disponiveis} faltando={repetir.faltando} />}
 
       {["aguardando_pagamento", "pago"].includes(p.status) && <CancelarPedidoBotao id={p.id} numero={p.numero} pago={p.status === "pago" && p.forma_pagamento === "pix"} />}
     </div>

@@ -141,8 +141,16 @@ export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNoti
 export async function notificarAdminNovoPedido(pedidoId: string) {
   const p = await carregarPedido(pedidoId);
   const cfg = await getConfig();
-  if (!p || !cfg.loja_whatsapp) return;
+  if (!p) return;
   const itens = (await sql`SELECT string_agg(qtd || 'x ' || nome, ', ') AS s FROM pedido_itens WHERE pedido_id = ${pedidoId}`) as { s: string }[];
+  const { enviarPush } = await import("./push");
+  await enviarPush({
+    titulo: `🆕 Pedido #${p.numero} · ${brl(p.total_centavos)}`,
+    corpo: `${p.cliente.split(" ")[0]} — ${itens[0]?.s ?? ""}\n${linhaEntrega(p)} · ${p.forma_pagamento === "pix" ? "PIX" : p.forma_pagamento === "dinheiro" ? "Dinheiro" : "Cartão"}`,
+    url: "/admin/pedidos",
+    tag: `pedido-${p.numero}`,
+  }).catch(() => {});
+  if (!cfg.loja_whatsapp) return;
   const texto = `🆕 Pedido #${p.numero} — ${p.cliente} (${p.telefone})\n${itens[0]?.s ?? ""}\n${brl(p.total_centavos)} · ${p.forma_pagamento.toUpperCase()}\n${linhaEntrega(p)}\n${urlBase()}/admin/pedidos`;
   await enviarWhatsApp({ telefone: cfg.loja_whatsapp, texto, tipo: "novo_pedido_admin", pedidoId });
 }

@@ -1,6 +1,6 @@
 // Service worker da Casa de Ração: app instalável + página offline.
 // Páginas e APIs vão sempre à rede (preço e estoque mudam); só arquivos estáticos ficam em cache.
-const VERSAO = "cr-v1";
+const VERSAO = "cr-v2";
 const OFFLINE = "/offline";
 const PRECACHE = [OFFLINE, "/icons/icon-192.png", "/produtos/racao-cao.svg", "/produtos/racao-gato.svg"];
 
@@ -34,4 +34,32 @@ self.addEventListener("fetch", (e) => {
       })),
     );
   }
+});
+
+// Notificações push (pedido novo para a loja)
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { corpo: e.data ? e.data.text() : "" }; }
+  e.waitUntil(
+    self.registration.showNotification(d.titulo || "Casa de Ração", {
+      body: d.corpo || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: d.tag || undefined,
+      renotify: !!d.tag,
+      data: { url: d.url || "/admin/pedidos" },
+      vibrate: [120, 60, 120],
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const alvo = new URL((e.notification.data && e.notification.data.url) || "/admin/pedidos", self.location.origin).href;
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((abertas) => {
+      for (const c of abertas) if (c.url.startsWith(self.location.origin) && "focus" in c) { c.navigate(alvo); return c.focus(); }
+      return self.clients.openWindow(alvo);
+    }),
+  );
 });

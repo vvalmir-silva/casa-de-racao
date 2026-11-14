@@ -374,3 +374,36 @@ export async function responderAvaliacao(fd: FormData): Promise<R> {
   revalidatePath("/admin/avaliacoes"); revalidatePath("/");
   return { ok: true };
 }
+
+/* ---------- Notificação push neste aparelho ---------- */
+const inscricaoSchema = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().min(10).max(200), auth: z.string().min(8).max(100) }),
+});
+
+export async function salvarInscricaoPush(sub: unknown, aparelho: string): Promise<R> {
+  const s = await exigirSessao(["admin"]);
+  const parsed = inscricaoSchema.safeParse(sub);
+  if (!parsed.success) return { erro: "Inscrição inválida." };
+  const { endpoint, keys } = parsed.data;
+  await sql`
+    INSERT INTO push_inscricoes (usuario_id, endpoint, p256dh, auth, aparelho)
+    VALUES (${s.id}, ${endpoint}, ${keys.p256dh}, ${keys.auth}, ${aparelho.slice(0, 120)})
+    ON CONFLICT (endpoint) DO UPDATE SET usuario_id = EXCLUDED.usuario_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, aparelho = EXCLUDED.aparelho
+  `;
+  return { ok: true };
+}
+
+export async function removerInscricaoPush(endpoint: string): Promise<R> {
+  const s = await exigirSessao(["admin"]);
+  await sql`DELETE FROM push_inscricoes WHERE endpoint = ${endpoint} AND usuario_id = ${s.id}`;
+  return { ok: true };
+}
+
+export async function testarPush(): Promise<R> {
+  await exigirSessao(["admin"]);
+  const { enviarPush, pushConfigurado } = await import("@/lib/push");
+  if (!pushConfigurado()) return { erro: "Notificações ainda não configuradas no servidor." };
+  const r = await enviarPush({ titulo: "Teste da Casa de Ração 🔔", corpo: "Se você está vendo isto, os avisos de pedido novo vão chegar aqui.", url: "/admin", tag: "teste" });
+  return r.enviados ? { ok: true } : { erro: "Nenhum aparelho recebeu. Ative de novo neste celular." };
+}

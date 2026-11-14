@@ -6,6 +6,7 @@ import { AdicionarBotao } from "@/components/AdicionarBotao";
 import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
 import { IconChevron } from "@/components/Icons";
 import { urlSite, jsonLd } from "@/lib/site";
+import { FavoritoBotao } from "@/components/FavoritoBotao";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,10 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         <div className="flex flex-col gap-6 md:py-4">
           <div>
             {p.marca && <div className="text-sm font-bold text-pine-700">{p.marca}</div>}
-            <h1 className="mt-1 text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[36px]">{p.nome}</h1>
+            <div className="mt-1 flex items-start justify-between gap-3">
+              <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[36px]">{p.nome}</h1>
+              <FavoritoBotao id={p.id} nome={p.nome} grande />
+            </div>
             <div className="mt-3 flex items-baseline gap-3">
               <span className="text-[32px] font-extrabold tracking-tight">{brl(p.preco_centavos)}</span>
               {peso >= 1 && <span className="rounded-full bg-white px-2.5 py-1 text-[13px] font-bold text-ink-3">{brl(Math.round(p.preco_centavos / peso))}/kg</span>}

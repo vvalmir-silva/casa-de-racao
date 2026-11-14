@@ -4,6 +4,9 @@ import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
 import { Banners } from "@/components/Vitrine";
 import { IconChevron } from "@/components/Icons";
 import { urlSite, jsonLd } from "@/lib/site";
+import { getSessao } from "@/lib/auth";
+import { jaComprados } from "@/lib/repetir";
+import { buscarProdutos } from "@/lib/busca";
 
 export const dynamic = "force-dynamic";
 
@@ -39,16 +42,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     FROM categorias c LEFT JOIN produtos p ON p.categoria_id = c.id AND p.ativo
     GROUP BY c.id ORDER BY c.ordem, c.nome
   `) as Categoria[];
-  const busca = q ? `%${q}%` : null;
-  const produtos = (await sql`
+  const produtos = q
+    ? ((await buscarProdutos(q)).filter((p) => !cat || p.categoria_slug === cat) as Prod[])
+    : ((await sql`
     SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
     FROM produtos p JOIN categorias c ON c.id = p.categoria_id
-    WHERE p.ativo
-      AND (${cat ?? null}::text IS NULL OR c.slug = ${cat ?? null})
-      AND (${busca}::text IS NULL OR p.nome ILIKE ${busca} OR p.marca ILIKE ${busca})
+    WHERE p.ativo AND (${cat ?? null}::text IS NULL OR c.slug = ${cat ?? null})
     ORDER BY p.destaque DESC, p.estoque = 0, p.nome
-  `) as Prod[];
+  `) as Prod[]);
   const filtrando = !!(cat || q);
+  const sessao = filtrando ? null : await getSessao();
+  const comprados = sessao ? await jaComprados(sessao.id) : [];
+  const favoritos = sessao ? ((await sql`
+    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
+    FROM favoritos f JOIN produtos p ON p.id = f.produto_id JOIN categorias c ON c.id = p.categoria_id
+    WHERE f.usuario_id = ${sessao.id} AND p.ativo ORDER BY f.criado_em DESC LIMIT 10
+  `) as Prod[]) : [];
   const depoimentos = filtrando ? [] : ((await sql`
     SELECT a.id, split_part(u.nome, ' ', 1) AS nome, a.nota, a.comentario, a.resposta
     FROM avaliacoes a JOIN usuarios u ON u.id = a.cliente_id
@@ -143,6 +152,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(loja)} />
       <Banners />
       <Categorias />
+      {comprados.length > 0 && <Carrossel titulo="Comprar de novo" href="/conta" itens={comprados as Prod[]} />}
+      {favoritos.length > 0 && <Carrossel titulo="Seus favoritos" href="/conta/favoritos" itens={favoritos} />}
       <Carrossel titulo="Mais pedidos no bairro" itens={produtos} />
       {secoes.map(({ c, itens }) => <Carrossel key={c.id} titulo={c.nome} href={`/?cat=${c.slug}`} itens={itens} />)}
       {depoimentos.length > 0 && (

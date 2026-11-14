@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sql } from "@/lib/db";
 import { brl } from "@/lib/utils";
 import { partesLocais } from "@/lib/frete";
+import { PushToggle } from "./PushToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function AdminHome() {
     <div>
       <h1 className="h1 mb-1">Resumo</h1>
       <p className="muted mb-5">O que precisa de atenção hoje.</p>
+      <div className="mb-5"><PushToggle /></div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {cards.map(([t, v, h]) => (
           <Link key={t} href={h} className="stat hover:border-pine-200">

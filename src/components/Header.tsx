@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCarrinho } from "@/lib/carrinho";
 import type { Sessao } from "@/lib/auth";
-import { IconCart, IconHome, IconPaw, IconSearch, IconSettings, IconTruck, IconUser } from "./Icons";
+import { IconCart, IconHome, IconPaw, IconSettings, IconTruck, IconUser } from "./Icons";
 import { LocalChip } from "./LocalSheet";
+import { BuscaCampo } from "./BuscaCampo";
 
 export function Header({ sessao }: { sessao: Sessao | null }) {
   const { quantidade: qtdCarrinho } = useCarrinho();
@@ -15,26 +16,10 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
   useEffect(() => setMontado(true), []);
   const quantidade = montado ? qtdCarrinho : 0;
   const path = usePathname();
-  const router = useRouter();
-  const sp = useSearchParams();
   const on = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
   const nome = sessao?.nome.split(" ")[0];
   const loja = !path.startsWith("/admin") && !path.startsWith("/motorista");
   const mostraBusca = path === "/" || path.startsWith("/produto");
-
-  function buscar(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-    router.push(q ? `/?q=${encodeURIComponent(q)}` : "/");
-  }
-
-  const Busca = ({ className = "" }: { className?: string }) => (
-    <form role="search" className={`relative ${className}`} onSubmit={buscar}>
-      <IconSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" width={18} height={18} />
-      <input key={sp.get("q") ?? ""} name="q" defaultValue={sp.get("q") ?? ""} placeholder="Buscar ração, marca, petisco…" aria-label="Buscar" enterKeyHint="search"
-        className="h-12 w-full rounded-full border border-transparent bg-page pl-11 pr-4 text-[15px] font-medium outline-none transition placeholder:text-ink-4 focus:border-pine-500 focus:bg-white focus:ring-4 focus:ring-pine-50" />
-    </form>
-  );
 
   return (
     <>
@@ -45,7 +30,7 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
             <span className="hidden text-[17px] font-extrabold tracking-tight lg:block">Casa de Ração</span>
           </Link>
           {loja && <LocalChip />}
-          {loja && <Busca className="hidden flex-1 md:block" />}
+          {loja && <BuscaCampo className="hidden flex-1 md:block" />}
           <nav className="ml-auto hidden items-center gap-1 md:flex">
             {sessao?.papel === "admin" && <Link href="/admin" className={`btn-ghost rounded-full ${on("/admin") ? "bg-pine-50 text-pine-700" : ""}`}><IconSettings width={18} height={18} /> Painel</Link>}
             {sessao?.papel === "motorista" && <Link href="/motorista" className={`btn-ghost rounded-full ${on("/motorista") ? "bg-pine-50 text-pine-700" : ""}`}><IconTruck width={18} height={18} /> Minha rota</Link>}
@@ -60,7 +45,7 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
             {quantidade > 0 && <Badge n={quantidade} />}
           </Link>
         </div>
-        {loja && mostraBusca && <div className="px-4 pb-3 md:hidden"><Busca /></div>}
+        {loja && mostraBusca && <div className="px-4 pb-3 md:hidden"><BuscaCampo /></div>}
       </header>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line/70 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Navegação">

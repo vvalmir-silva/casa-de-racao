@@ -8,6 +8,8 @@ import { LocalProvider } from "@/lib/local";
 import { LocalSheet } from "@/components/LocalSheet";
 import { CarrinhoFlutuante } from "@/components/CarrinhoFlutuante";
 import { Suspense } from "react";
+import { FavoritosProvider } from "@/lib/favoritos";
+import { sql } from "@/lib/db";
 import { urlSite } from "@/lib/site";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -32,11 +34,15 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const sessao = await getSessao();
+  const favoritos = sessao
+    ? ((await sql`SELECT produto_id FROM favoritos WHERE usuario_id = ${sessao.id}`.catch(() => [])) as { produto_id: string }[]).map((f) => f.produto_id)
+    : [];
   return (
     <html lang="pt-BR">
       <body className="flex min-h-screen flex-col">
         <CarrinhoProvider>
           <LocalProvider>
+          <FavoritosProvider ids={favoritos} logado={!!sessao}>
           <Suspense><Header sessao={sessao} /></Suspense>
           <LocalSheet />
           <CarrinhoFlutuante />
@@ -48,6 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span>Ração para cães, gatos e aves · entrega em rotas pelo bairro</span>
             </div>
           </footer>
+          </FavoritosProvider>
           </LocalProvider>
         </CarrinhoProvider>
         <Analytics />

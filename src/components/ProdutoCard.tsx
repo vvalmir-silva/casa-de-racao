@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCarrinho } from "@/lib/carrinho";
 import { brl } from "@/lib/utils";
 import { IconMinus, IconPlus } from "./Icons";
+import { FavoritoBotao } from "./FavoritoBotao";
 
 export type ProdutoResumo = {
   id: string;
@@ -62,6 +63,7 @@ export function ProdutoCard({ p, compacto }: { p: ProdutoResumo; compacto?: bool
           <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-red-700 backdrop-blur">Últimas {p.estoque}</span>
         ) : null}
       </Link>
+      <div className="absolute right-2 top-2"><FavoritoBotao id={p.id} nome={p.nome} /></div>
       <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-square items-end justify-end p-2.5">
         <div className="pointer-events-auto"><Contador p={p} /></div>
       </div>

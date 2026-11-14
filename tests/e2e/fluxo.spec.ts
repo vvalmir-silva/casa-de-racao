@@ -129,3 +129,30 @@ test("cancelar pedido abre pop-up de confirmação", async ({ page }) => {
   await expect(page.getByText("Cancelado", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cancelar pedido" })).toHaveCount(0);
 });
+
+test("favoritos e comprar de novo", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.goto("/produto/alpiste-1kg");
+  const coracao = page.getByRole("button", { name: "Favoritar Alpiste 1 kg" });
+  await coracao.click();
+  await expect(page.getByRole("button", { name: "Tirar Alpiste 1 kg dos favoritos" })).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/conta/favoritos");
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Seus favoritos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Comprar de novo" })).toBeVisible();
+
+  // repete o pedido entregue (1x Ração Gatos Castrados 10 kg)
+  await page.evaluate(() => localStorage.removeItem("cr_carrinho_v1"));
+  await page.goto("/conta");
+  await page.getByRole("button", { name: /^Repetir pedido/ }).click();
+  await expect(page).toHaveURL(/\/carrinho/);
+  await expect(page.getByText("Ração Gatos Castrados 10 kg")).toBeVisible();
+});
+
+test("painel mostra o aviso de pedido novo", async ({ page }) => {
+  test.skip(!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, "build sem chave de push");
+  await entrar(page, ADMIN);
+  await page.goto("/admin");
+  await expect(page.getByText("Aviso de pedido novo")).toBeVisible();
+});
