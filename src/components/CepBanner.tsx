@@ -12,11 +12,8 @@ export function CepBanner() {
   const [r, setR] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const c = localStorage.getItem("cr_cep");
-    if (c) { setCep(mascaraCep(c)); consultar(c); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // CEP começa sempre vazio; remove o valor salvo por versões anteriores
+  useEffect(() => { try { localStorage.removeItem("cr_cep"); } catch {} }, []);
 
   async function consultar(c: string) {
     const limpo = limparCep(c);
@@ -25,7 +22,6 @@ export function CepBanner() {
     try {
       const res = await fetch(`/api/frete?cep=${limpo}&subtotal=0&peso=1`);
       setR(await res.json());
-      localStorage.setItem("cr_cep", limpo);
     } finally { setLoading(false); }
   }
 
@@ -46,6 +42,7 @@ export function CepBanner() {
             value={cep}
             onChange={(e) => setCep(mascaraCep(e.target.value))}
             placeholder="Seu CEP"
+            autoComplete="off"
             inputMode="numeric"
             aria-label="CEP"
             className="input min-h-[50px] flex-1 border-0 bg-white text-base text-ink focus:ring-kibble-400 sm:max-w-[220px]"
