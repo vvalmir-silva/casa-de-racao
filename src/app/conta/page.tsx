@@ -2,7 +2,7 @@ import type React from "react";
 import Link from "next/link";
 import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, mascaraCep } from "@/lib/utils";
+import { brl, dataBR, rotuloStatus, TIPO_ENTREGA, mascaraCep } from "@/lib/utils";
 import { logoutAction } from "../login/actions";
 import { EnderecoForm, ExcluirEnderecoBotao, LembretesToggle } from "./ContaClient";
 import { ComprarDeNovo } from "@/components/ComprarDeNovo";
@@ -14,9 +14,9 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
   const { senha } = await searchParams;
   const s = await exigirSessao();
   const pedidos = (await sql`
-    SELECT id, numero, status, tipo_entrega, data_entrega, total_centavos, criado_em
+    SELECT id, numero, status, tipo_entrega, data_entrega, total_centavos, forma_pagamento, criado_em
     FROM pedidos WHERE cliente_id = ${s.id} ORDER BY criado_em DESC LIMIT 50
-  `) as { id: string; numero: number; status: string; tipo_entrega: string; data_entrega: string | null; total_centavos: number; criado_em: string }[];
+  `) as { id: string; numero: number; status: string; tipo_entrega: string; data_entrega: string | null; total_centavos: number; forma_pagamento: string; criado_em: string }[];
   const enderecos = (await sql`
     SELECT id, apelido, cep, logradouro, numero, complemento, bairro FROM enderecos WHERE usuario_id = ${s.id} ORDER BY padrao DESC, criado_em
   `) as { id: string; apelido: string; cep: string; logradouro: string; numero: string; complemento: string | null; bairro: string }[];
@@ -53,7 +53,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
                 </div>
                 <div className="text-right">
                   <div className="font-extrabold">{brl(p.total_centavos)}</div>
-                  <span className={`badge ${STATUS_PEDIDO[p.status].cor}`}>{STATUS_PEDIDO[p.status].label}</span>
+                  <span className={`badge ${rotuloStatus(p.status, p.forma_pagamento).cor}`}>{rotuloStatus(p.status, p.forma_pagamento).label}</span>
                 </div>
               </Link>
             ))}

@@ -1,5 +1,7 @@
 "use client";
 
+type FormaPagamento = "pix" | "dinheiro" | "cartao_entrega" | "na_loja";
+
 import { CampoComplemento } from "@/components/CampoComplemento";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +29,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const [frete, setFrete] = useState<Frete | null>(null);
   const [carregandoFrete, setCarregandoFrete] = useState(false);
   const [escolha, setEscolha] = useState<string>("");
-  const [pagamento, setPagamento] = useState<"pix" | "dinheiro" | "cartao_entrega">("pix");
+  const [pagamento, setPagamento] = useState<FormaPagamento>("pix");
   const [troco, setTroco] = useState("");
   const [obs, setObs] = useState("");
   const [erro, setErro] = useState("");
@@ -70,6 +72,12 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   }, [cepAtual, subtotal, peso, pronto]);
 
   const opcao = useMemo(() => frete?.opcoes.find((o) => chave(o) === escolha) ?? null, [frete, escolha]);
+  // troca de entrega ↔ retirada: forma de pagamento que não vale mais volta para PIX
+  useEffect(() => {
+    if (!opcao) return;
+    const ok = opcao.tipo === "retirada" ? ["pix", "na_loja"] : ["pix", "dinheiro", "cartao_entrega"];
+    if (!ok.includes(pagamento)) setPagamento("pix");
+  }, [opcao, pagamento]);
   const freteBase = opcao?.taxa_centavos ?? 0;
   const freteFinal = cupom?.frete_gratis ? 0 : freteBase;
   const desconto = cupom && !cupom.frete_gratis ? cupom.desconto_centavos : 0;
@@ -85,6 +93,11 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const faltaGratis = freteGratisMinimo - subtotal;
 
   if (!pronto || itens.length === 0) return null;
+
+  const retirada = opcao?.tipo === "retirada";
+  const opcoesPagamento: [FormaPagamento, string, string][] = retirada
+    ? [["pix", "PIX pelo app", "Paga agora e só retira"], ["na_loja", "Pagar na loja", "Dinheiro, cartão ou PIX no balcão"]]
+    : [["pix", "PIX pelo app", "Confirmação na hora"], ["dinheiro", "Dinheiro na entrega", "Avise se precisa de troco"], ["cartao_entrega", "Cartão na entrega", "Débito ou crédito na maquininha"]];
 
   function enviar() {
     setErro("");
@@ -185,10 +198,13 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
         {/* Pagamento */}
         <section className="card space-y-3">
           <h2 className="h2">Pagamento</h2>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {([["pix", "PIX"], ["dinheiro", "Dinheiro na entrega"], ["cartao_entrega", "Cartão na entrega"]] as const).map(([v, l]) => (
-              <label key={v} className={`cursor-pointer rounded-2xl border-2 p-3.5 text-center text-sm ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-page bg-page"}`}>
-                <input type="radio" className="sr-only" checked={pagamento === v} onChange={() => setPagamento(v)} />{l}
+          {retirada && <p className="-mt-1 text-sm text-ink-3">Você vai retirar na loja: pague agora pelo app ou na hora de retirar.</p>}
+          <div role="radiogroup" aria-label="Forma de pagamento" className={`grid gap-2 ${opcoesPagamento.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {opcoesPagamento.map(([v, l, d]) => (
+              <label key={v} className={`flex cursor-pointer flex-col rounded-2xl border-2 p-3.5 text-sm transition-colors ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-page bg-page hover:border-line-2"}`}>
+                <input type="radio" name="forma_pagamento" className="sr-only" checked={pagamento === v} onChange={() => setPagamento(v)} />
+                <span className="font-bold text-ink">{l}</span>
+                <span className="text-[12.5px] text-ink-3">{d}</span>
               </label>
             ))}
           </div>

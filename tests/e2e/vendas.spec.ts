@@ -76,3 +76,34 @@ test("admin importa produtos por planilha com prévia", async ({ page }) => {
   expect(corpo).toContain("Ração Teste Importada 2 kg");
   expect(corpo).toMatch(/alpiste-1kg;Alpiste 1 kg;Ração para Aves;[^;]*;12,90;;[^;]*;77;/);
 });
+
+test("retirada: paga no app ou na loja; entrega: todas as formas", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Adicionar / }).first().click();
+  await page.goto("/checkout");
+  const formas = page.getByRole("radiogroup", { name: "Forma de pagamento" });
+
+  await page.getByText("Retirar na loja").first().click();
+  await expect(formas.getByRole("radio")).toHaveCount(2);
+  await expect(formas.getByText("Pagar na loja")).toBeVisible();
+  await expect(formas.getByText("Dinheiro na entrega")).toHaveCount(0);
+
+  // endereço novo para ver as opções de entrega
+  await page.route("**/api/cep?cep=02225010", (r) =>
+    r.fulfill({ json: { cep: "02225010", logradouro: "Rua das Flores", bairro: "Vila Guilherme", cidade: "São Paulo", uf: "SP" } }));
+  await page.getByLabel("CEP", { exact: true }).fill("02225-010");
+  await page.getByLabel("Número", { exact: true }).fill("200");
+  await page.getByLabel("É casa, sem complemento").check();
+  await page.getByText(/^Entrega (hoje|amanhã|.+), 18:00–21:00$/).first().click();
+  await expect(formas.getByRole("radio")).toHaveCount(3);
+  await expect(formas.getByText("Cartão na entrega")).toBeVisible();
+  await expect(formas.getByText("Pagar na loja")).toHaveCount(0);
+
+  await page.getByText("Retirar na loja").first().click();
+  await formas.getByText("Pagar na loja").click();
+  await page.getByRole("button", { name: "Confirmar pedido" }).last().click();
+  await expect(page).toHaveURL(/\/conta\/pedido\//);
+  await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
+  await expect(page.getByText("Pagar na loja")).toBeVisible();
+});

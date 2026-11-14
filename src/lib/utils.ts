@@ -47,7 +47,21 @@ export const FORMA_PAGAMENTO: Record<string, string> = {
   pix: "PIX",
   dinheiro: "Dinheiro na entrega",
   cartao_entrega: "Cartão na entrega",
+  na_loja: "Pagar na loja",
 };
+
+/** Formas aceitas por tipo de entrega: retirada paga no app (PIX) ou na loja; entrega aceita todas da entrega. */
+export const PAGAMENTOS_POR_ENTREGA: Record<string, string[]> = {
+  retirada: ["pix", "na_loja"],
+  rota: ["pix", "dinheiro", "cartao_entrega"],
+  expresso: ["pix", "dinheiro", "cartao_entrega"],
+};
+
+/** "Pago" só quando já pagou de fato (PIX); pagamento na entrega/loja aparece como "Confirmado". */
+export function rotuloStatus(status: string, forma?: string | null) {
+  const st = STATUS_PEDIDO[status] ?? { label: status, cor: "bg-line text-ink-3" };
+  return status === "pago" && forma && forma !== "pix" ? { ...st, label: "Confirmado" } : st;
+}
 
 export const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 

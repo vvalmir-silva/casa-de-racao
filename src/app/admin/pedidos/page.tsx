@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { sql } from "@/lib/db";
-import { brl, dataBR, dataHoraBR, STATUS_PEDIDO, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep } from "@/lib/utils";
+import { brl, dataBR, dataHoraBR, rotuloStatus, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep } from "@/lib/utils";
 import { StatusBotoes } from "./PedidosClient";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
       </div>
       <div className="space-y-2">
         {pedidos.map((p) => {
-          const st = STATUS_PEDIDO[p.status];
+          const st = rotuloStatus(p.status, p.forma_pagamento);
           const wa = `https://wa.me/55${p.telefone}?text=${encodeURIComponent(`Olá ${p.cliente.split(" ")[0]}, sobre seu pedido #${p.numero} na Casa de Ração: `)}`;
           return (
             <div key={p.id} className="card space-y-2 text-sm">

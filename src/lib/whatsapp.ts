@@ -114,14 +114,14 @@ export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNoti
     case "pedido_recebido":
       texto = p.forma_pagamento === "pix"
         ? `Olá, ${nome}! Recebemos seu pedido #${p.numero} na ${loja} (${brl(p.total_centavos)}).\nPara confirmar, pague o PIX pelo link:\n${link}\n${linhaEntrega(p)}`
-        : `Olá, ${nome}! Pedido #${p.numero} confirmado na ${loja} (${brl(p.total_centavos)}, pagamento na entrega).\n${linhaEntrega(p)}\n${link}`;
+        : `Olá, ${nome}! Pedido #${p.numero} confirmado na ${loja} (${brl(p.total_centavos)}, ${p.forma_pagamento === "na_loja" ? "pagamento na loja, na retirada" : "pagamento na entrega"}).\n${linhaEntrega(p)}\n${link}`;
       break;
     case "pagamento_confirmado":
       texto = `Pagamento do pedido #${p.numero} confirmado ✅\n${linhaEntrega(p)}\nObrigado, ${nome}!`;
       break;
     case "separado":
       texto = p.tipo_entrega === "retirada"
-        ? `${nome}, seu pedido #${p.numero} está pronto para retirada na ${loja}. 🛍️\n${cfg.loja_endereco ?? ""}`
+        ? `${nome}, seu pedido #${p.numero} está pronto para retirada na ${loja}. 🛍️${p.forma_pagamento === "na_loja" ? ` Pagamento no balcão: ${brl(p.total_centavos)}.` : ""}\n${cfg.loja_endereco ?? ""}`
         : `${nome}, seu pedido #${p.numero} foi separado e sai na próxima rota. 📦`;
       break;
     case "em_rota":
@@ -146,7 +146,7 @@ export async function notificarAdminNovoPedido(pedidoId: string) {
   const { enviarPush } = await import("./push");
   await enviarPush({
     titulo: `🆕 Pedido #${p.numero} · ${brl(p.total_centavos)}`,
-    corpo: `${p.cliente.split(" ")[0]} — ${itens[0]?.s ?? ""}\n${linhaEntrega(p)} · ${p.forma_pagamento === "pix" ? "PIX" : p.forma_pagamento === "dinheiro" ? "Dinheiro" : "Cartão"}`,
+    corpo: `${p.cliente.split(" ")[0]} — ${itens[0]?.s ?? ""}\n${linhaEntrega(p)} · ${({ pix: "PIX", dinheiro: "Dinheiro", cartao_entrega: "Cartão", na_loja: "Paga na loja" } as Record<string, string>)[p.forma_pagamento] ?? p.forma_pagamento}`,
     url: "/admin/pedidos",
     tag: `pedido-${p.numero}`,
   }).catch(() => {});

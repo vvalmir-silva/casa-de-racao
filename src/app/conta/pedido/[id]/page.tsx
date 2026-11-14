@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { exigirSessao } from "@/lib/auth";
 import { sql, getConfig } from "@/lib/db";
-import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep } from "@/lib/utils";
+import { brl, dataBR, rotuloStatus, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep } from "@/lib/utils";
 import { CancelarPedidoBotao } from "../../ContaClient";
 import { hm } from "@/lib/frete";
 import { PixBox } from "@/components/PixBox";
@@ -30,7 +30,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
   if (!p) notFound();
   const itens = (await sql`SELECT nome, qtd, preco_centavos FROM pedido_itens WHERE pedido_id = ${id}`) as { nome: string; qtd: number; preco_centavos: number }[];
   const cfg = await getConfig();
-  const st = STATUS_PEDIDO[p.status];
+  const st = rotuloStatus(p.status, p.forma_pagamento);
   const [aval] = (await sql`SELECT nota, comentario, resposta FROM avaliacoes WHERE pedido_id = ${id}`) as { nota: number; comentario: string | null; resposta: string | null }[];
   const repetir = s.papel !== "admin" && ["entregue", "cancelado", "em_rota", "separado", "pago"].includes(p.status) ? await itensParaRepetir(p.id) : null;
   const podeAvaliar = p.status === "entregue" && !aval && s.papel !== "admin";

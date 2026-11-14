@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAGAMENTOS_POR_ENTREGA } from "./utils";
 import { sql } from "./db";
 import { comTransacao } from "./pool";
 import { calcularFrete, partesLocais, type OpcaoEntrega } from "./frete";
@@ -31,7 +32,7 @@ export const novoPedidoSchema = z.object({
   endereco_id: z.string().uuid().nullable().optional(),
   endereco_novo: enderecoSchema.nullable().optional(),
   salvar_endereco: z.boolean().optional(),
-  forma_pagamento: z.enum(["pix", "dinheiro", "cartao_entrega"]),
+  forma_pagamento: z.enum(["pix", "dinheiro", "cartao_entrega", "na_loja"]),
   troco_para_centavos: z.number().int().positive().nullable().optional(),
   observacoes: z.string().trim().max(500).optional().or(z.literal("")),
   cupom: z.string().trim().max(40).optional().or(z.literal("")),
@@ -107,6 +108,11 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
   }
 
   const total = Math.max(0, subtotal + frete - desconto);
+  if (!(PAGAMENTOS_POR_ENTREGA[input.tipo_entrega] ?? []).includes(input.forma_pagamento)) {
+    throw new ErroPedido(input.tipo_entrega === "retirada"
+      ? "Na retirada, pague pelo app (PIX) ou na loja."
+      : "Pagar na loja só vale para retirada. Escolha PIX, dinheiro ou cartão na entrega.");
+  }
   if (input.forma_pagamento === "dinheiro" && input.troco_para_centavos && input.troco_para_centavos < total) {
     throw new ErroPedido("Valor para troco menor que o total.");
   }
