@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 type Pedido = {
   id: string; numero: number; status: string; tipo_entrega: string; data_entrega: string | null; endereco: Record<string, string> | null;
   subtotal_centavos: number; frete_centavos: number; total_centavos: number; forma_pagamento: string; troco_para_centavos: number | null;
-  observacoes: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
+  observacoes: string | null; comprovante_url: string | null; recebido_por: string | null; entregue_em: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
 };
 
 export default async function PedidoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ novo?: string }> }) {
@@ -39,6 +39,19 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
 
       {p.status === "aguardando_pagamento" && p.forma_pagamento === "pix" && (
         <PixBox pedidoId={p.id} total={p.total_centavos} chaveManual={cfg.pix_chave ?? ""} whatsappLink={wa} />
+      )}
+
+      {p.status === "entregue" && (p.comprovante_url || p.recebido_por) && (
+        <div className="card space-y-2">
+          <div className="h2">Comprovante de entrega</div>
+          {p.recebido_por && <p className="text-sm text-ink-2">Recebido por <b>{p.recebido_por}</b></p>}
+          {p.comprovante_url && (
+            <a href={p.comprovante_url} target="_blank">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.comprovante_url} alt="Foto da entrega" className="max-h-72 w-full rounded-xl object-cover" />
+            </a>
+          )}
+        </div>
       )}
 
       <div className="card space-y-1 text-sm">

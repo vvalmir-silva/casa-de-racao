@@ -1,15 +1,17 @@
-import { sql } from "@/lib/db";
+import { sql, getConfig } from "@/lib/db";
+import { linksMaps, formatarDistancia, formatarDuracao } from "@/lib/rota";
 import { partesLocais, somarDias } from "@/lib/frete";
 import { brl, dataBR, mascaraCep, DIAS_SEMANA } from "@/lib/utils";
 import { FormAction, BotaoAction } from "@/components/FormAction";
-import { criarRota, atualizarRota, removerDaRota, excluirRota } from "../actions";
+import { criarRota, atualizarRota, removerDaRota, excluirRota, otimizarRotaAction } from "../actions";
 import { diaSemanaDe } from "@/lib/frete";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // geocodificação gratuita é 1 endereço/segundo
 
 type PedidoPend = { id: string; numero: number; cliente: string; zona_id: number | null; zona: string | null; endereco: Record<string, string>; total_centavos: number; peso_total_kg: string; status: string; inicio: string | null; fim: string | null };
-type Rota = { id: string; data: string; status: string; motorista: string | null; motorista_id: string | null; zona: string | null; qtd: number; entregues: number };
-type PedRota = { id: string; numero: number; rota_id: string; ordem_rota: number; cliente: string; endereco: Record<string, string>; status: string };
+type Rota = { id: string; data: string; status: string; motorista: string | null; motorista_id: string | null; zona: string | null; qtd: number; entregues: number; distancia_m: number | null; duracao_s: number | null; otimizada_por: string | null };
+type PedRota = { id: string; numero: number; rota_id: string; ordem_rota: number; cliente: string; endereco: Record<string, string>; status: string; comprovante_url: string | null; recebido_por: string | null };
 
 export default async function RotasAdmin({ searchParams }: { searchParams: Promise<{ data?: string }> }) {
   const hoje = partesLocais().data;
@@ -21,18 +23,21 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
     ORDER BY p.zona_id, p.endereco->>'cep'
   `) as PedidoPend[];
   const rotas = (await sql`
-    SELECT r.id, r.data::text, r.status, r.motorista_id, m.nome AS motorista, z.nome AS zona,
+    SELECT r.id, r.data::text, r.status, r.motorista_id, m.nome AS motorista, z.nome AS zona, r.distancia_m, r.duracao_s, r.otimizada_por,
       (SELECT count(*) FROM pedidos p WHERE p.rota_id = r.id) AS qtd,
       (SELECT count(*) FROM pedidos p WHERE p.rota_id = r.id AND p.status = 'entregue') AS entregues
     FROM rotas r LEFT JOIN usuarios m ON m.id = r.motorista_id LEFT JOIN zonas z ON z.id = r.zona_id
     WHERE r.data = ${data} ORDER BY r.criado_em
   `) as Rota[];
   const pedRotas = (await sql`
-    SELECT p.id, p.numero, p.rota_id, p.ordem_rota, u.nome AS cliente, p.endereco, p.status
+    SELECT p.id, p.numero, p.rota_id, p.ordem_rota, u.nome AS cliente, p.endereco, p.status, p.comprovante_url, p.recebido_por
     FROM pedidos p JOIN usuarios u ON u.id = p.cliente_id WHERE p.rota_id = ANY(${rotas.map((r) => r.id)}::uuid[]) ORDER BY p.ordem_rota
   `) as PedRota[];
   const motoristas = (await sql`SELECT id, nome FROM usuarios WHERE papel IN ('motorista','admin') AND ativo ORDER BY nome`) as { id: string; nome: string }[];
   const zonas = (await sql`SELECT id, nome FROM zonas WHERE ativa ORDER BY ordem`) as { id: number; nome: string }[];
+  const cfg = await getConfig();
+  const origem = cfg.loja_endereco ?? "";
+  const nomeOtimizador: Record<string, string> = { google: "Google Maps", osrm: "OpenStreetMap", local: "estimativa por distância", cep: "ordem de CEP" };
   const aguardandoPix = (await sql`SELECT count(*) AS n FROM pedidos WHERE status = 'aguardando_pagamento' AND data_entrega = ${data}`) as { n: string }[];
 
   return (
@@ -77,29 +82,46 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
 
       {rotas.map((r) => {
         const peds = pedRotas.filter((p) => p.rota_id === r.id);
-        const waypoints = peds.map((p) => encodeURIComponent(`${p.endereco.logradouro}, ${p.endereco.numero}, ${p.endereco.bairro}, ${p.endereco.cidade}`));
-        const maps = `https://www.google.com/maps/dir/?api=1&destination=${waypoints[waypoints.length - 1] ?? ""}&waypoints=${waypoints.slice(0, -1).join("|")}&travelmode=driving`;
+        const pendentesRota = peds.filter((p) => p.status !== "entregue" && p.status !== "cancelado");
+        const links = linksMaps(origem, pendentesRota.map((p) => `${p.endereco.logradouro}, ${p.endereco.numero}, ${p.endereco.bairro}, ${p.endereco.cidade}`));
         return (
-          <section key={r.id} className="card space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="h2">Rota {r.zona ? `· ${r.zona}` : ""}</h2>
-              <span className={`badge ${r.status === "concluida" ? "bg-pine-100 text-pine-800" : r.status === "em_andamento" ? "bg-violet-100 text-violet-900" : "bg-page"}`}>{r.status.replace("_", " ")}</span>
-              <span className="muted">{r.entregues}/{r.qtd} entregues</span>
-              <a href={maps} target="_blank" className="btn-outline ml-auto py-1.5">Abrir no Maps</a>
-              {r.status === "planejada" && <BotaoAction className="btn-outline py-1.5 text-red-700" action={excluirRota} args={[r.id]} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
+          <section key={r.id} className="card space-y-4">
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="h2">Rota{r.zona ? ` · ${r.zona}` : ""}</h2>
+                  <span className={`badge ${r.status === "concluida" ? "bg-pine-100 text-pine-800" : r.status === "em_andamento" ? "bg-violet-100 text-violet-900" : "bg-page text-ink-2"}`}>{r.status === "em_andamento" ? "em andamento" : r.status}</span>
+                </div>
+                <div className="mt-1 text-sm text-ink-2">
+                  {r.entregues}/{r.qtd} entregues{r.distancia_m != null ? ` · ${formatarDistancia(r.distancia_m)}` : ""}{r.duracao_s != null ? ` · ~${formatarDuracao(r.duracao_s)}` : ""}
+                  {r.otimizada_por && <span className="text-ink-3"> · ordem por {nomeOtimizador[r.otimizada_por] ?? r.otimizada_por}</span>}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {r.status !== "concluida" && pendentesRota.length > 1 && <BotaoAction className="btn-outline" action={otimizarRotaAction} args={[r.id]}>Otimizar ordem</BotaoAction>}
+                {links.map((l, i) => <a key={l} href={l} target="_blank" className="btn-primary">{links.length > 1 ? `Maps · trecho ${i + 1}` : "Abrir no Maps"}</a>)}
+                {r.status === "planejada" && <BotaoAction className="btn-outline text-red-700" action={excluirRota} args={[r.id]} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
+              </div>
             </div>
             <FormAction action={atualizarRota} className="flex gap-2">
               <input type="hidden" name="rota_id" value={r.id} />
-              <select name="motorista_id" className="input w-48" defaultValue={r.motorista_id ?? ""}><option value="">Sem motorista</option>{motoristas.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}</select>
-              <button className="btn-outline">Atribuir</button>
+              <select name="motorista_id" className="input sm:w-56" defaultValue={r.motorista_id ?? ""}><option value="">Sem motorista</option>{motoristas.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}</select>
+              <button className="btn-outline shrink-0">Atribuir</button>
             </FormAction>
-            <ol className="space-y-1 text-sm">
+            <ol className="space-y-2 text-sm">
               {peds.map((p) => (
-                <li key={p.id} className="flex items-center gap-2 rounded border border-line p-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-pine-700 text-xs text-white">{p.ordem_rota}</span>
-                  <span className="flex-1">#{p.numero} {p.cliente} · {p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro}</span>
-                  <span className="badge bg-page">{p.status}</span>
-                  {p.status !== "entregue" && r.status === "planejada" && <BotaoAction className="text-xs text-red-600" action={removerDaRota} args={[p.id]}>remover</BotaoAction>}
+                <li key={p.id} className={`flex items-center gap-3 rounded-xl border p-3 ${p.status === "entregue" ? "border-pine-200 bg-pine-50" : "border-line"}`}>
+                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${p.status === "entregue" ? "bg-pine-500 text-white" : "bg-pine-700 text-white"}`}>{p.status === "entregue" ? "✓" : p.ordem_rota}</span>
+                  <span className="min-w-0 flex-1"><b>#{p.numero}</b> {p.cliente}<span className="block text-ink-3">{p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro}</span>
+                    {p.recebido_por && <span className="block text-xs text-ink-3">Recebido por {p.recebido_por}</span>}
+                  </span>
+                  {p.comprovante_url && (
+                    <a href={p.comprovante_url} target="_blank" title="Foto da entrega" className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-line">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.comprovante_url} alt="Comprovante" className="h-full w-full object-cover" />
+                    </a>
+                  )}
+                  {p.status !== "entregue" && r.status === "planejada" && <BotaoAction className="text-xs font-semibold text-red-600" action={removerDaRota} args={[p.id]}>remover</BotaoAction>}
                 </li>
               ))}
             </ol>

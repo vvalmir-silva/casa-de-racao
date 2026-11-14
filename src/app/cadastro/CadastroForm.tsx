@@ -14,10 +14,10 @@ export function CadastroForm() {
       <p className="muted mb-5">Leva menos de um minuto. Só telefone e senha.</p>
       <form action={action} className="card space-y-4">
         <input type="hidden" name="next" value={sp.get("next") ?? ""} />
-        <div><label className="label">Nome</label><input name="nome" required className="input" /></div>
-        <div><label className="label">Telefone (WhatsApp)</label><input name="telefone" inputMode="tel" required className="input" placeholder="(11) 99999-9999" /></div>
-        <div><label className="label">E-mail (opcional)</label><input name="email" type="email" className="input" /></div>
-        <div><label className="label">Senha</label><input name="senha" type="password" minLength={6} required className="input" /></div>
+        <div><label className="label" htmlFor="cd-nome">Nome</label><input id="cd-nome" name="nome" required className="input" /></div>
+        <div><label className="label" htmlFor="cd-telefone-whatsapp">Telefone (WhatsApp)</label><input id="cd-telefone-whatsapp" name="telefone" inputMode="tel" required className="input" placeholder="(11) 99999-9999" /></div>
+        <div><label className="label" htmlFor="cd-e-mail-opcional">E-mail (opcional)</label><input id="cd-e-mail-opcional" name="email" type="email" className="input" /></div>
+        <div><label className="label" htmlFor="cd-senha">Senha</label><input id="cd-senha" name="senha" type="password" minLength={6} required className="input" /></div>
         {state?.erro && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{state.erro}</p>}
         <button className="btn-primary w-full" disabled={pending}>{pending ? "Criando..." : "Criar conta"}</button>
         <p className="text-center text-sm text-ink-2">

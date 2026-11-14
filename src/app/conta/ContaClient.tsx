@@ -40,15 +40,15 @@ export function EnderecoForm() {
         setAberto(false); setCep(""); router.refresh();
       })}
     >
-      <div><label className="label">CEP</label><input name="cep" className="input" value={cep} onChange={(e) => buscarCep(e.target.value)} inputMode="numeric" required /></div>
-      <div className="col-span-2"><label className="label">Rua</label><input name="logradouro" className="input" defaultValue={auto.logradouro} key={`l${auto.logradouro}`} required /></div>
-      <div><label className="label">Número</label><input name="numero" className="input" required /></div>
-      <div><label className="label">Complemento</label><input name="complemento" className="input" /></div>
-      <div><label className="label">Bairro</label><input name="bairro" className="input" defaultValue={auto.bairro} key={`b${auto.bairro}`} required /></div>
-      <div><label className="label">Cidade</label><input name="cidade" className="input" defaultValue={auto.cidade} key={`c${auto.cidade}`} required /></div>
-      <div><label className="label">UF</label><input name="uf" className="input" maxLength={2} defaultValue={auto.uf} key={`u${auto.uf}`} required /></div>
-      <div><label className="label">Apelido</label><input name="apelido" className="input" defaultValue="Casa" /></div>
-      <div className="col-span-2 sm:col-span-3"><label className="label">Referência</label><input name="referencia" className="input" /></div>
+      <div><label className="label" htmlFor="ce-cep">CEP</label><input id="ce-cep" name="cep" className="input" value={cep} onChange={(e) => buscarCep(e.target.value)} inputMode="numeric" required /></div>
+      <div className="col-span-2"><label className="label" htmlFor="ce-rua">Rua</label><input id="ce-rua" name="logradouro" className="input" defaultValue={auto.logradouro} key={`l${auto.logradouro}`} required /></div>
+      <div><label className="label" htmlFor="ce-numero">Número</label><input id="ce-numero" name="numero" className="input" required /></div>
+      <div><label className="label" htmlFor="ce-complemento">Complemento</label><input id="ce-complemento" name="complemento" className="input" /></div>
+      <div><label className="label" htmlFor="ce-bairro">Bairro</label><input id="ce-bairro" name="bairro" className="input" defaultValue={auto.bairro} key={`b${auto.bairro}`} required /></div>
+      <div><label className="label" htmlFor="ce-cidade">Cidade</label><input id="ce-cidade" name="cidade" className="input" defaultValue={auto.cidade} key={`c${auto.cidade}`} required /></div>
+      <div><label className="label" htmlFor="ce-uf">UF</label><input id="ce-uf" name="uf" className="input" maxLength={2} defaultValue={auto.uf} key={`u${auto.uf}`} required /></div>
+      <div><label className="label" htmlFor="ce-apelido">Apelido</label><input id="ce-apelido" name="apelido" className="input" defaultValue="Casa" /></div>
+      <div className="col-span-2 sm:col-span-3"><label className="label" htmlFor="ce-referencia">Referência</label><input id="ce-referencia" name="referencia" className="input" /></div>
       {erro && <p className="col-span-full text-sm text-red-600">{erro}</p>}
       <div className="col-span-full flex gap-2">
         <button className="btn-primary" disabled={p}>Salvar</button>

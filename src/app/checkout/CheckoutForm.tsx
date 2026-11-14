@@ -131,15 +131,15 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           )}
           {enderecoId === "novo" && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <div><label className="label">CEP</label><input className="input" inputMode="numeric" value={novo.cep} onChange={(e) => setNovo({ ...novo, cep: mascaraCep(e.target.value) })} /></div>
-              <div className="col-span-2"><label className="label">Rua</label><input className="input" value={novo.logradouro} onChange={(e) => setNovo({ ...novo, logradouro: e.target.value })} /></div>
-              <div><label className="label">Número</label><input className="input" value={novo.numero} onChange={(e) => setNovo({ ...novo, numero: e.target.value })} /></div>
-              <div><label className="label">Complemento</label><input className="input" value={novo.complemento} onChange={(e) => setNovo({ ...novo, complemento: e.target.value })} /></div>
-              <div><label className="label">Bairro</label><input className="input" value={novo.bairro} onChange={(e) => setNovo({ ...novo, bairro: e.target.value })} /></div>
-              <div><label className="label">Cidade</label><input className="input" value={novo.cidade} onChange={(e) => setNovo({ ...novo, cidade: e.target.value })} /></div>
-              <div><label className="label">UF</label><input className="input" maxLength={2} value={novo.uf} onChange={(e) => setNovo({ ...novo, uf: e.target.value.toUpperCase() })} /></div>
-              <div><label className="label">Apelido</label><input className="input" value={novo.apelido} onChange={(e) => setNovo({ ...novo, apelido: e.target.value })} /></div>
-              <div className="col-span-2 sm:col-span-3"><label className="label">Referência</label><input className="input" value={novo.referencia} onChange={(e) => setNovo({ ...novo, referencia: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-cep">CEP</label><input id="ck-cep" className="input" inputMode="numeric" value={novo.cep} onChange={(e) => setNovo({ ...novo, cep: mascaraCep(e.target.value) })} /></div>
+              <div className="col-span-2"><label className="label" htmlFor="ck-rua">Rua</label><input id="ck-rua" className="input" value={novo.logradouro} onChange={(e) => setNovo({ ...novo, logradouro: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-numero">Número</label><input id="ck-numero" className="input" value={novo.numero} onChange={(e) => setNovo({ ...novo, numero: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-complemento">Complemento</label><input id="ck-complemento" className="input" value={novo.complemento} onChange={(e) => setNovo({ ...novo, complemento: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-bairro">Bairro</label><input id="ck-bairro" className="input" value={novo.bairro} onChange={(e) => setNovo({ ...novo, bairro: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-cidade">Cidade</label><input id="ck-cidade" className="input" value={novo.cidade} onChange={(e) => setNovo({ ...novo, cidade: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-uf">UF</label><input id="ck-uf" className="input" maxLength={2} value={novo.uf} onChange={(e) => setNovo({ ...novo, uf: e.target.value.toUpperCase() })} /></div>
+              <div><label className="label" htmlFor="ck-apelido">Apelido</label><input id="ck-apelido" className="input" value={novo.apelido} onChange={(e) => setNovo({ ...novo, apelido: e.target.value })} /></div>
+              <div className="col-span-2 sm:col-span-3"><label className="label" htmlFor="ck-referencia">Referência</label><input id="ck-referencia" className="input" value={novo.referencia} onChange={(e) => setNovo({ ...novo, referencia: e.target.value })} /></div>
               <label className="col-span-2 flex items-center gap-2 text-sm sm:col-span-3"><input type="checkbox" checked={salvar} onChange={(e) => setSalvar(e.target.checked)} /> Salvar este endereço</label>
             </div>
           )}
@@ -186,9 +186,9 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
             <p className="text-sm text-ink-2">Chave PIX: <b>{pixChave}</b>. O pedido é confirmado após o pagamento.</p>
           )}
           {pagamento === "dinheiro" && (
-            <div><label className="label">Troco para (R$, opcional)</label><input className="input" inputMode="decimal" value={troco} onChange={(e) => setTroco(e.target.value)} placeholder="ex.: 200" /></div>
+            <div><label className="label" htmlFor="ck-troco-para-r-opcional">Troco para (R$, opcional)</label><input id="ck-troco-para-r-opcional" className="input" inputMode="decimal" value={troco} onChange={(e) => setTroco(e.target.value)} placeholder="ex.: 200" /></div>
           )}
-          <div><label className="label">Observações</label><textarea className="input" rows={2} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Portão azul, deixar com o porteiro..." /></div>
+          <div><label className="label" htmlFor="ck-observacoes">Observações</label><textarea id="ck-observacoes" className="input" rows={2} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Portão azul, deixar com o porteiro..." /></div>
         </section>
       </div>
 

@@ -7,7 +7,8 @@ import { EnderecoForm, ExcluirEnderecoBotao, LembretesToggle } from "./ContaClie
 
 export const dynamic = "force-dynamic";
 
-export default async function ContaPage() {
+export default async function ContaPage({ searchParams }: { searchParams: Promise<{ senha?: string }> }) {
+  const { senha } = await searchParams;
   const s = await exigirSessao();
   const pedidos = (await sql`
     SELECT id, numero, status, tipo_entrega, data_entrega, total_centavos, criado_em
@@ -20,6 +21,7 @@ export default async function ContaPage() {
 
   return (
     <div className="space-y-6">
+      {senha && <div className="rounded-xl bg-pine-50 px-4 py-3 text-sm font-semibold text-pine-800">Senha trocada. Você já está conectado.</div>}
       <div className="flex items-center justify-between">
         <h1 className="h1">Olá, {s.nome.split(" ")[0]}</h1>
         <div className="flex gap-2">

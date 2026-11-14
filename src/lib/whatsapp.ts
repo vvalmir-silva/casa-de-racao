@@ -10,7 +10,7 @@ import { sql, getConfig } from "./db";
 
 export type TipoNotificacao =
   | "pedido_recebido" | "pagamento_confirmado" | "separado" | "em_rota" | "entregue" | "cancelado"
-  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste";
+  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste" | "codigo_acesso";
 
 function numeroE164(telefone: string) {
   const d = telefone.replace(/\D/g, "");
@@ -54,16 +54,20 @@ async function enviarViaProvedor(telefone: string, texto: string): Promise<{ ok:
 /** Envia e registra. Nunca lança — falha de WhatsApp não pode quebrar o pedido. */
 export async function enviarWhatsApp(params: {
   telefone: string; texto: string; tipo: TipoNotificacao; pedidoId?: string | null; usuarioId?: string | null;
+  /** texto gravado no log, quando a mensagem tem dado sigiloso (ex.: código) */
+  textoLog?: string;
 }) {
   const cfg = await getConfig();
-  if ((cfg.whatsapp_notificacoes ?? "true") !== "true" && params.tipo !== "teste") {
+  const log = params.textoLog ?? params.texto;
+  const essencial = params.tipo === "teste" || params.tipo === "codigo_acesso";
+  if ((cfg.whatsapp_notificacoes ?? "true") !== "true" && !essencial) {
     await sql`INSERT INTO notificacoes (pedido_id, usuario_id, telefone, tipo, mensagem, status, erro)
-      VALUES (${params.pedidoId ?? null}, ${params.usuarioId ?? null}, ${params.telefone}, ${params.tipo}, ${params.texto}, 'desativado', 'notificações desligadas nas configurações')`;
+      VALUES (${params.pedidoId ?? null}, ${params.usuarioId ?? null}, ${params.telefone}, ${params.tipo}, ${log}, 'desativado', 'notificações desligadas nas configurações')`;
     return { ok: false, desativado: true };
   }
   const r = await enviarViaProvedor(params.telefone, params.texto);
   await sql`INSERT INTO notificacoes (pedido_id, usuario_id, telefone, tipo, mensagem, status, erro)
-    VALUES (${params.pedidoId ?? null}, ${params.usuarioId ?? null}, ${params.telefone}, ${params.tipo}, ${params.texto},
+    VALUES (${params.pedidoId ?? null}, ${params.usuarioId ?? null}, ${params.telefone}, ${params.tipo}, ${log},
             ${r.ok ? "enviada" : r.desativado ? "desativado" : "erro"}, ${r.erro ?? null})`;
   return r;
 }

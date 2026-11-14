@@ -8,6 +8,7 @@ import { comTransacao } from "@/lib/pool";
 import { cancelarPedido, ErroPedido } from "@/lib/pedidos";
 import { slugify } from "@/lib/utils";
 import { notificarPedido } from "@/lib/whatsapp";
+import { otimizarRota } from "@/lib/rota";
 
 type R = { ok?: true; erro?: string };
 
@@ -122,10 +123,10 @@ export async function criarRota(fd: FormData): Promise<R> {
   const zona = Number(fd.get("zona_id")) || null;
   const pedidos = fd.getAll("pedido_id").map(String);
   if (!data || pedidos.length === 0) return { erro: "Selecione a data e ao menos um pedido." };
-  await comTransacao(async (q) => {
+  const rotaId = await comTransacao(async (q) => {
     const r = await q(`INSERT INTO rotas (data, motorista_id, zona_id) VALUES ($1,$2,$3) RETURNING id`, [data, motorista, zona]);
-    const rotaId = r.rows[0].id;
-    // ordena por CEP (aproximação de proximidade); motorista pode reordenar
+    const rotaId = String(r.rows[0].id);
+    // ordem inicial por CEP; em seguida otimizamos com geolocalização
     const ord = await q(
       `SELECT id FROM pedidos WHERE id = ANY($1::uuid[]) AND rota_id IS NULL AND status IN ('pago','separado') ORDER BY endereco->>'cep'`,
       [pedidos],
@@ -134,7 +135,27 @@ export async function criarRota(fd: FormData): Promise<R> {
     for (const row of ord.rows) {
       await q(`UPDATE pedidos SET rota_id = $1, ordem_rota = $2, status = CASE WHEN status = 'pago' THEN 'separado' ELSE status END WHERE id = $3`, [rotaId, i++, row.id]);
     }
+    return rotaId;
   });
+  try { await otimizarRota(rotaId); } catch (e) { console.error("otimizarRota", e); }
+  revalidatePath("/admin/rotas"); revalidatePath("/motorista");
+  return { ok: true };
+}
+
+export async function otimizarRotaAction(rotaId: string): Promise<R> {
+  const s = await exigirSessao(["admin", "motorista"]);
+  const [r] = (await sql`SELECT motorista_id, status FROM rotas WHERE id = ${rotaId}`) as { motorista_id: string | null; status: string }[];
+  if (!r) return { erro: "Rota não encontrada." };
+  if (s.papel === "motorista" && r.motorista_id !== s.id) return { erro: "Rota de outro motorista." };
+  if (r.status === "concluida") return { erro: "Rota já concluída." };
+  try {
+    const res = await otimizarRota(rotaId);
+    if (!res.ok) return { erro: res.motivo };
+    if (res.semOrigem) return { erro: "Rota ordenada por CEP. Para otimizar por distância, confira o endereço da loja em Configurações." };
+  } catch (e) {
+    console.error(e);
+    return { erro: "Não foi possível otimizar agora. Tente de novo em instantes." };
+  }
   revalidatePath("/admin/rotas"); revalidatePath("/motorista");
   return { ok: true };
 }
@@ -241,7 +262,7 @@ export async function excluirJanela(id: number): Promise<R> {
 const chavesPermitidas = new Set([
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
-  "recompra_dias_antes","whatsapp_notificacoes","pix_expiracao_minutos",
+  "recompra_dias_antes","whatsapp_notificacoes","pix_expiracao_minutos","loja_lat","loja_lng","comprovante_obrigatorio",
 ]);
 
 export async function salvarConfig(fd: FormData): Promise<R> {
@@ -250,11 +271,15 @@ export async function salvarConfig(fd: FormData): Promise<R> {
     if (!chavesPermitidas.has(k)) continue;
     let val = String(v).trim();
     if (k.endsWith("_centavos")) val = String(Math.round(Number(val.replace(",", ".")) * 100));
-    if (k === "expresso_ativo" || k === "whatsapp_notificacoes") val = val === "on" ? "true" : "false";
+    if (k === "expresso_ativo" || k === "whatsapp_notificacoes" || k === "comprovante_obrigatorio") val = val === "on" ? "true" : "false";
+    if (k === "loja_lat" || k === "loja_lng") val = val.replace(",", ".");
     await sql`INSERT INTO configuracoes (chave, valor) VALUES (${k}, ${val}) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor`;
   }
   if (!fd.has("expresso_ativo")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'expresso_ativo'`;
   if (!fd.has("whatsapp_notificacoes")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'whatsapp_notificacoes'`;
+  if (!fd.has("comprovante_obrigatorio")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'comprovante_obrigatorio'`;
+  // endereço da loja mudou → recalcula coordenadas na próxima otimização
+  if (fd.has("loja_endereco") && !String(fd.get("loja_lat") ?? "").trim()) await sql`UPDATE configuracoes SET valor = '' WHERE chave IN ('loja_lat','loja_lng')`;
   revalidatePath("/admin/config"); revalidatePath("/");
   return { ok: true };
 }

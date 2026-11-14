@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cr
+          POSTGRES_PASSWORD: cr
+          POSTGRES_DB: cr_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cr" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql://cr:cr@localhost:5432/cr_e2e
+      DATABASE_URL: postgresql://cr:cr@localhost:5432/cr_e2e
+      DB_DRIVER: pg
+      SESSION_SECRET: ci-segredo-de-teste-com-32-caracteres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Testes unitários
+        run: npx vitest run
+      - name: Build
+        run: npx next build
+      - name: Navegador dos testes
+        run: npx playwright install --with-deps chromium
+      - name: Testes de ponta a ponta
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: relatorio-playwright
+          path: playwright-report/
+          retention-days: 7

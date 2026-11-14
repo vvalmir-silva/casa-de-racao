@@ -31,6 +31,15 @@ Acessos iniciais (troque em **Admin → Usuários**):
 3. O `vercel.json` já agenda o cron de assinaturas (`/api/cron/assinaturas`, diário às 09:00 UTC = 06:00 BRT).
 4. Node 22 (padrão da Vercel) — necessário para o `Pool` WebSocket do Neon.
 
+## Testes
+
+```bash
+npm test                 # unitários (frete, datas, rota)
+npm run test:e2e         # ponta a ponta com Playwright (precisa de Postgres local; ver playwright.config.ts)
+```
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2E a cada push, com Postgres de teste.
+
 ## Integrações (opcionais, via variáveis de ambiente)
 
 | Recurso | Variáveis | Sem configurar |
@@ -38,6 +47,8 @@ Acessos iniciais (troque em **Admin → Usuários**):
 | WhatsApp automático (pedido, pagamento, saiu p/ entrega, entregue, lembrete de recompra) | `WHATSAPP_PROVIDER=evolution` + `WHATSAPP_API_URL/KEY/INSTANCE`, ou `=zapi` + `ZAPI_INSTANCE/TOKEN/CLIENT_TOKEN` | Mensagens ficam registradas em Admin → Notificações como "desativado" |
 | PIX automático com QR Code e confirmação | `MP_ACCESS_TOKEN` (Mercado Pago) e, opcional, `MP_WEBHOOK_SECRET`. Cadastre o webhook `https://SEU-DOMINIO/api/webhooks/mercadopago` (evento *Pagamentos*) | Cliente vê a chave PIX manual e o admin confirma |
 | Links nas mensagens | `NEXT_PUBLIC_SITE_URL` | Sem link |
+| Rota otimizada | `GOOGLE_MAPS_API_KEY` (opcional, mais preciso). Sem chave usa OpenStreetMap (Nominatim + OSRM), grátis | Ordem por distância estimada ou por CEP |
+| Recuperar senha | Usa o WhatsApp configurado | Tela orienta a falar com a loja; admin troca a senha em Usuários |
 | Upload de fotos de produto | `BLOB_READ_WRITE_TOKEN` (Vercel Blob, criado automaticamente ao conectar o store) | Só URL da imagem |
 
 **Migrações:** novas alterações de banco ficam em `db/migrations/*.sql`. Aplique com `npm run db:migrate` ou acessando `/api/admin/migrar` logado como admin.
