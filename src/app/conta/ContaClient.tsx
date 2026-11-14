@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { mascaraCep, limparCep } from "@/lib/utils";
+import { mascaraCep } from "@/lib/utils";
+import { useBuscaCep } from "@/hooks/useBuscaCep";
+import { CepStatus } from "@/components/CepStatus";
 import { salvarEndereco, excluirEndereco, cancelarMeuPedido, alternarLembretes } from "./actions";
 
 export function ExcluirEnderecoBotao({ id }: { id: string }) {
@@ -15,44 +17,47 @@ export function ExcluirEnderecoBotao({ id }: { id: string }) {
 }
 
 export function EnderecoForm() {
+  const vazio = { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", apelido: "Casa", referencia: "" };
   const [aberto, setAberto] = useState(false);
-  const [cep, setCep] = useState("");
-  const [auto, setAuto] = useState({ logradouro: "", bairro: "", cidade: "", uf: "" });
+  const [f, setF] = useState(vazio);
   const [erro, setErro] = useState("");
   const [p, start] = useTransition();
+  const numeroRef = useRef<HTMLInputElement>(null);
+  const ruaRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const busca = useBuscaCep(aberto ? f.cep : "", (e) => {
+    setF((x) => ({ ...x, logradouro: e.logradouro || x.logradouro, bairro: e.bairro || x.bairro, cidade: e.cidade, uf: e.uf }));
+    setTimeout(() => (e.logradouro ? numeroRef.current : ruaRef.current)?.focus(), 50);
+  });
+  const campo = (k: keyof typeof vazio) => ({ name: k, value: f[k], onChange: (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: k === "uf" ? e.target.value.toUpperCase() : e.target.value }) });
 
-  async function buscarCep(v: string) {
-    setCep(mascaraCep(v));
-    const c = limparCep(v);
-    if (c.length === 8) {
-      const r = await fetch(`/api/cep?cep=${c}`);
-      if (r.ok) setAuto(await r.json());
-    }
-  }
   if (!aberto) return <button className="btn-outline mt-2" onClick={() => setAberto(true)}>+ Novo endereço</button>;
   return (
     <form
-      className="card mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3"
+      className="card mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3"
       action={(fd) => start(async () => {
         const r = await salvarEndereco(fd);
         if (r?.erro) return setErro(r.erro);
-        setAberto(false); setCep(""); router.refresh();
+        setAberto(false); setF(vazio); router.refresh();
       })}
     >
-      <div><label className="label" htmlFor="ce-cep">CEP</label><input id="ce-cep" name="cep" className="input" value={cep} onChange={(e) => buscarCep(e.target.value)} inputMode="numeric" required /></div>
-      <div className="col-span-2"><label className="label" htmlFor="ce-rua">Rua</label><input id="ce-rua" name="logradouro" className="input" defaultValue={auto.logradouro} key={`l${auto.logradouro}`} required /></div>
-      <div><label className="label" htmlFor="ce-numero">Número</label><input id="ce-numero" name="numero" className="input" required /></div>
-      <div><label className="label" htmlFor="ce-complemento">Complemento</label><input id="ce-complemento" name="complemento" className="input" /></div>
-      <div><label className="label" htmlFor="ce-bairro">Bairro</label><input id="ce-bairro" name="bairro" className="input" defaultValue={auto.bairro} key={`b${auto.bairro}`} required /></div>
-      <div><label className="label" htmlFor="ce-cidade">Cidade</label><input id="ce-cidade" name="cidade" className="input" defaultValue={auto.cidade} key={`c${auto.cidade}`} required /></div>
-      <div><label className="label" htmlFor="ce-uf">UF</label><input id="ce-uf" name="uf" className="input" maxLength={2} defaultValue={auto.uf} key={`u${auto.uf}`} required /></div>
-      <div><label className="label" htmlFor="ce-apelido">Apelido</label><input id="ce-apelido" name="apelido" className="input" defaultValue="Casa" /></div>
-      <div className="col-span-2 sm:col-span-3"><label className="label" htmlFor="ce-referencia">Referência</label><input id="ce-referencia" name="referencia" className="input" /></div>
-      {erro && <p className="col-span-full text-sm text-red-600">{erro}</p>}
+      <div className="col-span-2 sm:col-span-3">
+        <label className="label" htmlFor="ce-cep">CEP</label>
+        <input id="ce-cep" name="cep" className="input sm:max-w-[220px]" inputMode="numeric" autoComplete="postal-code" maxLength={9} placeholder="00000-000" required value={f.cep} onChange={(e) => setF({ ...f, cep: mascaraCep(e.target.value) })} />
+        <CepStatus status={busca.status} endereco={busca.endereco} />
+      </div>
+      <div className="col-span-2"><label className="label" htmlFor="ce-rua">Rua</label><input id="ce-rua" ref={ruaRef} className="input" required {...campo("logradouro")} /></div>
+      <div><label className="label" htmlFor="ce-numero">Número</label><input id="ce-numero" ref={numeroRef} className="input" required {...campo("numero")} /></div>
+      <div><label className="label" htmlFor="ce-complemento">Complemento</label><input id="ce-complemento" className="input" {...campo("complemento")} /></div>
+      <div><label className="label" htmlFor="ce-bairro">Bairro</label><input id="ce-bairro" className="input" required {...campo("bairro")} /></div>
+      <div><label className="label" htmlFor="ce-cidade">Cidade</label><input id="ce-cidade" className="input" required {...campo("cidade")} /></div>
+      <div><label className="label" htmlFor="ce-uf">UF</label><input id="ce-uf" className="input" maxLength={2} required {...campo("uf")} /></div>
+      <div><label className="label" htmlFor="ce-apelido">Apelido</label><input id="ce-apelido" className="input" {...campo("apelido")} /></div>
+      <div className="col-span-2 sm:col-span-3"><label className="label" htmlFor="ce-referencia">Referência</label><input id="ce-referencia" className="input" {...campo("referencia")} /></div>
+      {erro && <p className="col-span-full rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>}
       <div className="col-span-full flex gap-2">
-        <button className="btn-primary" disabled={p}>Salvar</button>
-        <button type="button" className="btn-ghost" onClick={() => setAberto(false)}>Cancelar</button>
+        <button className="btn-primary" disabled={p}>Salvar endereço</button>
+        <button type="button" className="btn-ghost" onClick={() => { setAberto(false); setF(vazio); }}>Cancelar</button>
       </div>
     </form>
   );

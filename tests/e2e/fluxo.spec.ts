@@ -14,13 +14,14 @@ test("cliente se cadastra e fecha pedido com cupom e entrega em rota", async ({ 
   await expect(page).toHaveURL("/");
 
   await page.getByRole("article").filter({ hasText: "Ração Gatos Castrados 10 kg" }).getByRole("button", { name: /Adicionar/ }).click();
+  // busca de CEP simulada (o teste não depende de serviço externo)
+  await page.route("**/api/cep?cep=02225010", (r) =>
+    r.fulfill({ json: { cep: "02225010", logradouro: "Rua das Flores", bairro: "Vila Guilherme", cidade: "São Paulo", uf: "SP" } }));
   await page.goto("/checkout");
   await page.getByLabel("CEP", { exact: true }).fill("02225-010");
-  await page.getByLabel("Rua", { exact: true }).fill("Rua das Flores");
+  await expect(page.getByLabel("Rua", { exact: true })).toHaveValue("Rua das Flores");
+  await expect(page.getByLabel("Número", { exact: true })).toBeFocused();
   await page.getByLabel("Número", { exact: true }).fill("100");
-  await page.getByLabel("Bairro", { exact: true }).fill("Vila Guilherme");
-  await page.getByLabel("Cidade", { exact: true }).fill("São Paulo");
-  await page.getByLabel("UF", { exact: true }).fill("SP");
 
   const rota = page.getByRole("radio").and(page.locator("[name=ent]")).nth(1);
   await expect(page.getByText(/^Entrega (hoje|amanhã|.+), 18:00–21:00$/)).toBeVisible();

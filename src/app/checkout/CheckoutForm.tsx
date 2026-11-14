@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCarrinho } from "@/lib/carrinho";
 import { brl, limparCep, mascaraCep } from "@/lib/utils";
 import { finalizarPedidoAction } from "./actions";
+import { useBuscaCep } from "@/hooks/useBuscaCep";
+import { CepStatus } from "@/components/CepStatus";
 
 export type EnderecoSalvo = {
   id: string; apelido: string; cep: string; logradouro: string; numero: string; complemento: string | null;
@@ -42,15 +44,13 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
 
   const cepAtual = enderecoId === "novo" ? limparCep(novo.cep) : enderecos.find((e) => e.id === enderecoId)?.cep ?? "";
 
-  // Preenche endereço pelo CEP
-  useEffect(() => {
-    if (enderecoId !== "novo") return;
-    const c = limparCep(novo.cep);
-    if (c.length !== 8) return;
-    fetch(`/api/cep?cep=${c}`).then((r) => r.ok ? r.json() : null).then((j) => {
-      if (j) setNovo((n) => ({ ...n, logradouro: j.logradouro || n.logradouro, bairro: j.bairro || n.bairro, cidade: j.cidade || n.cidade, uf: j.uf || n.uf }));
-    }).catch(() => {});
-  }, [novo.cep, enderecoId]);
+  // Preenche endereço pelo CEP (ViaCEP → BrasilAPI → OpenCEP)
+  const numeroRef = useRef<HTMLInputElement>(null);
+  const ruaRef = useRef<HTMLInputElement>(null);
+  const busca = useBuscaCep(enderecoId === "novo" ? novo.cep : "", (e) => {
+    setNovo((n) => ({ ...n, logradouro: e.logradouro || n.logradouro, bairro: e.bairro || n.bairro, cidade: e.cidade, uf: e.uf }));
+    setTimeout(() => (e.logradouro ? numeroRef.current : ruaRef.current)?.focus(), 50);
+  });
 
   // Calcula frete quando CEP/carrinho mudam
   useEffect(() => {
@@ -131,9 +131,13 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           )}
           {enderecoId === "novo" && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <div><label className="label" htmlFor="ck-cep">CEP</label><input id="ck-cep" className="input" inputMode="numeric" value={novo.cep} onChange={(e) => setNovo({ ...novo, cep: mascaraCep(e.target.value) })} /></div>
-              <div className="col-span-2"><label className="label" htmlFor="ck-rua">Rua</label><input id="ck-rua" className="input" value={novo.logradouro} onChange={(e) => setNovo({ ...novo, logradouro: e.target.value })} /></div>
-              <div><label className="label" htmlFor="ck-numero">Número</label><input id="ck-numero" className="input" value={novo.numero} onChange={(e) => setNovo({ ...novo, numero: e.target.value })} /></div>
+              <div className="col-span-2 sm:col-span-3">
+                <label className="label" htmlFor="ck-cep">CEP</label>
+                <input id="ck-cep" className="input sm:max-w-[220px]" inputMode="numeric" autoComplete="postal-code" maxLength={9} placeholder="00000-000" value={novo.cep} onChange={(e) => setNovo({ ...novo, cep: mascaraCep(e.target.value) })} />
+                <CepStatus status={busca.status} endereco={busca.endereco} />
+              </div>
+              <div className="col-span-2"><label className="label" htmlFor="ck-rua">Rua</label><input id="ck-rua" ref={ruaRef} className="input" autoComplete="address-line1" value={novo.logradouro} onChange={(e) => setNovo({ ...novo, logradouro: e.target.value })} /></div>
+              <div><label className="label" htmlFor="ck-numero">Número</label><input id="ck-numero" ref={numeroRef} className="input" inputMode="numeric" value={novo.numero} onChange={(e) => setNovo({ ...novo, numero: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-complemento">Complemento</label><input id="ck-complemento" className="input" value={novo.complemento} onChange={(e) => setNovo({ ...novo, complemento: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-bairro">Bairro</label><input id="ck-bairro" className="input" value={novo.bairro} onChange={(e) => setNovo({ ...novo, bairro: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-cidade">Cidade</label><input id="ck-cidade" className="input" value={novo.cidade} onChange={(e) => setNovo({ ...novo, cidade: e.target.value })} /></div>
