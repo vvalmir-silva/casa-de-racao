@@ -55,8 +55,10 @@ export async function GET(req: NextRequest) {
     const r = await enviarWhatsApp({ telefone: a.telefone, texto, tipo: "recompra", usuarioId: a.cliente_id });
     if (r.ok) enviados++;
   }
+  const { expirarPendencias } = await import("@/lib/protecoes");
+  const pendencias = await expirarPendencias(true).catch(() => null);
   const carrinho = await lembrarCarrinhos(base, loja, cfgInt(cfg, "carrinho_lembrete_horas", 20));
-  return NextResponse.json({ candidatos: alvos.length, enviados, carrinho });
+  return NextResponse.json({ candidatos: alvos.length, enviados, carrinho, pendencias });
 }
 
 /**

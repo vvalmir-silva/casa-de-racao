@@ -14,5 +14,7 @@ export default async function setup() {
   await run("db/seed.sql");
   for (const f of readdirSync("db/migrations").filter((x) => x.endsWith(".sql")).sort()) await run(join("db/migrations", f));
   await c.query("INSERT INTO zona_ceps (zona_id, prefixo) VALUES (1, '02225') ON CONFLICT DO NOTHING");
+  // fluxos gerais testam pagar na entrega/loja já no 1º pedido; as proteções têm teste próprio (vendas.spec)
+  await c.query("UPDATE configuracoes SET valor = '0' WHERE chave IN ('pagar_depois_min_pedidos', 'pagar_depois_max_centavos')");
   await c.end();
 }

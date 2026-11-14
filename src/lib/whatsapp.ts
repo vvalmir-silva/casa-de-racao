@@ -10,7 +10,7 @@ import { sql, getConfig } from "./db";
 
 export type TipoNotificacao =
   | "pedido_recebido" | "pagamento_confirmado" | "separado" | "em_rota" | "entregue" | "cancelado"
-  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste" | "codigo_acesso" | "carrinho_abandonado";
+  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste" | "codigo_acesso" | "carrinho_abandonado" | "lembrete_retirada";
 
 function numeroE164(telefone: string) {
   const d = telefone.replace(/\D/g, "");
@@ -76,7 +76,7 @@ export async function enviarWhatsApp(params: {
 
 type PedidoMsg = {
   id: string; numero: number; cliente: string; telefone: string; total_centavos: number; tipo_entrega: string;
-  data_entrega: string | null; forma_pagamento: string; inicio?: string | null; fim?: string | null;
+  data_entrega: string | null; forma_pagamento: string; inicio?: string | null; fim?: string | null; cancelado_motivo?: string | null;
 };
 
 const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -85,7 +85,7 @@ const hm = (t?: string | null) => (t ? t.slice(0, 5) : "");
 
 async function carregarPedido(pedidoId: string): Promise<PedidoMsg | null> {
   const rows = (await sql`
-    SELECT p.id, p.numero, u.nome AS cliente, u.telefone, p.total_centavos, p.tipo_entrega, p.data_entrega::text, p.forma_pagamento,
+    SELECT p.id, p.numero, u.nome AS cliente, u.telefone, p.total_centavos, p.tipo_entrega, p.data_entrega::text, p.forma_pagamento, p.cancelado_motivo,
            j.inicio::text, j.fim::text
     FROM pedidos p JOIN usuarios u ON u.id = p.cliente_id LEFT JOIN janelas j ON j.id = p.janela_id WHERE p.id = ${pedidoId}
   `) as PedidoMsg[];
@@ -102,7 +102,7 @@ function urlBase() {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
 }
 
-export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNotificacao, "novo_pedido_admin" | "recompra" | "teste" | "assinatura_gerada" | "carrinho_abandonado" | "codigo_acesso">) {
+export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNotificacao, "novo_pedido_admin" | "recompra" | "teste" | "assinatura_gerada" | "carrinho_abandonado" | "codigo_acesso" | "lembrete_retirada">) {
   const p = await carregarPedido(pedidoId);
   if (!p) return;
   const cfg = await getConfig();
@@ -131,7 +131,13 @@ export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNoti
       texto = `Pedido #${p.numero} entregue ✅ Obrigado pela compra, ${nome}! 🐾${link ? `\nConta pra gente como foi (leva 10 segundos):\n${link}#avaliar` : ""}`;
       break;
     case "cancelado":
-      texto = `Seu pedido #${p.numero} foi cancelado. Se não foi você, fale com a gente por aqui.`;
+      texto = p.cancelado_motivo === "pix_expirado"
+        ? `Seu pedido #${p.numero} foi cancelado porque o PIX não foi pago a tempo. Se ainda quiser, é só pedir de novo: ${urlBase()}`
+        : p.cancelado_motivo === "nao_recebido"
+          ? `Tentamos entregar seu pedido #${p.numero}, mas não conseguimos. O pedido foi cancelado. Se ainda quiser, fale com a gente por aqui ou peça de novo: ${urlBase()}`
+        : p.cancelado_motivo === "nao_retirado"
+          ? `Seu pedido #${p.numero} foi cancelado porque não foi retirado no prazo. Se ainda quiser, é só pedir de novo: ${urlBase()}`
+          : `Seu pedido #${p.numero} foi cancelado. Se não foi você, fale com a gente por aqui.`;
       break;
   }
   await enviarWhatsApp({ telefone: p.telefone, texto, tipo: evento, pedidoId: p.id });

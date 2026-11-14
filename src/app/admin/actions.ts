@@ -261,6 +261,7 @@ export async function excluirJanela(id: number): Promise<R> {
 
 /* ---------- Configurações ---------- */
 const chavesPermitidas = new Set([
+  "retirada_prazo_cancelar_horas","retirada_lembrete_horas","pagar_depois_min_pedidos","pagar_depois_max_centavos","faltas_bloqueio","carrinho_lembrete_horas",
   "avaliacao_auto_publicar","parcelas_max","parcela_minima_centavos","loja_instagram","loja_horario","loja_cnpj",
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
@@ -407,4 +408,20 @@ export async function testarPush(): Promise<R> {
   if (!pushConfigurado()) return { erro: "Notificações ainda não configuradas no servidor." };
   const r = await enviarPush({ titulo: "Teste da Casa de Ração 🔔", corpo: "Se você está vendo isto, os avisos de pedido novo vão chegar aqui.", url: "/admin", tag: "teste" });
   return r.enviados ? { ok: true } : { erro: "Nenhum aparelho recebeu. Ative de novo neste celular." };
+}
+
+/* ---------- Falta: cliente não retirou / não recebeu ---------- */
+export async function registrarFalta(id: string): Promise<R> {
+  const s = await exigirSessao(["admin", "motorista"]);
+  const [p] = (await sql`
+    SELECT p.status, p.tipo_entrega, r.motorista_id FROM pedidos p LEFT JOIN rotas r ON r.id = p.rota_id WHERE p.id = ${id}
+  `) as { status: string; tipo_entrega: string; motorista_id: string | null }[];
+  if (!p) return { erro: "Pedido não encontrado" };
+  if (s.papel === "motorista" && p.motorista_id !== s.id) return { erro: "Este pedido é de outra rota." };
+  if (!["pago", "separado", "em_rota"].includes(p.status)) return { erro: "Só para pedidos confirmados que ainda não foram entregues." };
+  const motivo = p.tipo_entrega === "retirada" ? "nao_retirado" : "nao_recebido";
+  try { await cancelarPedido(id, s.id, true, motivo); } catch (e) { return { erro: e instanceof ErroPedido ? e.message : "Erro" }; }
+  await notificarPedido(id, "cancelado").catch(() => {});
+  revalidatePath("/admin/pedidos"); revalidatePath("/admin/rotas"); revalidatePath("/motorista");
+  return { ok: true };
 }

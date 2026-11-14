@@ -108,6 +108,23 @@ export async function sincronizarPagamento(externoId: string): Promise<{ status:
       return (r.rowCount ?? 0) > 0;
     });
     if (mudou) await notificarPedido(reg.pedido_id, "pagamento_confirmado");
+    else await avisarPixEmPedidoCancelado(reg.pedido_id).catch(() => {});
   }
   return { status: pay.status, pedido_id: reg.pedido_id };
+}
+
+/** PIX aprovado num pedido que já tinha sido cancelado (ex.: expirou): avisa a loja para reativar ou devolver. */
+async function avisarPixEmPedidoCancelado(pedidoId: string) {
+  const [p] = (await sql`SELECT numero, status, total_centavos, cancelado_motivo FROM pedidos WHERE id = ${pedidoId}`) as { numero: number; status: string; total_centavos: number; cancelado_motivo: string | null }[];
+  if (!p || p.status !== "cancelado") return;
+  const valor = (p.total_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const texto = `⚠️ PIX de ${valor} caiu no pedido #${p.numero}, que já estava cancelado (${p.cancelado_motivo ?? "sem motivo"}). Fale com o cliente: reative o pedido ou devolva o valor.`;
+  const { enviarPush } = await import("./push");
+  await enviarPush({ titulo: `PIX em pedido cancelado #${p.numero}`, corpo: texto, url: "/admin/pedidos?status=cancelado", tag: `pix-cancelado-${p.numero}` }).catch(() => {});
+  const { getConfig } = await import("./db");
+  const cfg = await getConfig();
+  if (cfg.loja_whatsapp) {
+    const { enviarWhatsApp } = await import("./whatsapp");
+    await enviarWhatsApp({ telefone: cfg.loja_whatsapp, texto, tipo: "novo_pedido_admin", pedidoId });
+  }
 }

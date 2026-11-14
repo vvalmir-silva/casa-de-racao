@@ -107,3 +107,79 @@ test("retirada: paga no app ou na loja; entrega: todas as formas", async ({ page
   await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
   await expect(page.getByText("Pagar na loja")).toBeVisible();
 });
+
+test("proteções: 1º pedido só PIX, PIX vencido cancela e devolve estoque, faltas bloqueiam", async ({ page, request }) => {
+  const c = new Client({ connectionString: URL_DB });
+  await c.connect();
+  await c.query("UPDATE configuracoes SET valor = '1' WHERE chave = 'pagar_depois_min_pedidos'");
+  const novo = { nome: "Caio Novo", telefone: `117${String(Date.now()).slice(-8)}`, senha: "segredo1" };
+  try {
+    await page.goto("/cadastro");
+    await page.getByLabel("Nome").fill(novo.nome);
+    await page.getByLabel("Telefone (WhatsApp)").fill(novo.telefone);
+    await page.getByLabel("Senha").fill(novo.senha);
+    await page.getByRole("button", { name: "Criar conta" }).click();
+    await expect(page).toHaveURL("/");
+    await page.goto("/produto/alpiste-1kg");
+    await page.getByRole("button", { name: /^Adicionar · / }).locator("visible=true").click();
+    await page.goto("/checkout");
+    await page.getByText("Retirar na loja").first().click();
+    const formas = page.getByRole("radiogroup", { name: "Forma de pagamento" });
+    await expect(formas.getByRole("radio", { name: /Pagar na loja/ })).toBeDisabled();
+    await expect(page.getByText(/No primeiro pedido, o pagamento é por PIX pelo app/)).toBeVisible();
+    const est0 = Number((await c.query("SELECT estoque FROM produtos WHERE slug = 'alpiste-1kg'")).rows[0].estoque);
+    await page.getByRole("button", { name: "Confirmar pedido" }).last().click();
+    await expect(page).toHaveURL(/\/conta\/pedido\//);
+    const pedidoUrl = page.url();
+
+    // PIX não pago: 2h depois o pedido cai e o estoque volta
+    await c.query("UPDATE pedidos SET criado_em = now() - interval '2 hours' WHERE cliente_id = (SELECT id FROM usuarios WHERE telefone = $1)", [novo.telefone]);
+    expect((await request.get("/api/cron/recompra", { headers: { authorization: "Bearer e2e" } })).ok()).toBeTruthy();
+    const ped = (await c.query("SELECT status, cancelado_motivo FROM pedidos WHERE cliente_id = (SELECT id FROM usuarios WHERE telefone = $1)", [novo.telefone])).rows[0];
+    expect(ped).toEqual({ status: "cancelado", cancelado_motivo: "pix_expirado" });
+    expect(Number((await c.query("SELECT estoque FROM produtos WHERE slug = 'alpiste-1kg'")).rows[0].estoque)).toBe(est0);
+    await page.goto(pedidoUrl);
+    await expect(page.getByText("Cancelado porque o PIX não foi pago a tempo.")).toBeVisible();
+
+    // 2 faltas: mesmo com pedido entregue, volta a ser só PIX
+    await c.query(`UPDATE pedidos SET status = 'entregue', entregue_em = now(), cancelado_motivo = NULL WHERE cliente_id = (SELECT id FROM usuarios WHERE telefone = $1)`, [novo.telefone]);
+    await page.goto("/");
+    await page.getByRole("button", { name: /^Adicionar / }).first().click();
+    await page.goto("/checkout");
+    await page.getByText("Retirar na loja").first().click();
+    await expect(formas.getByRole("radio", { name: /Pagar na loja/ })).toBeEnabled();
+    const uid = (await c.query("SELECT id FROM usuarios WHERE telefone = $1", [novo.telefone])).rows[0].id;
+    for (const m of ["nao_retirado", "nao_recebido"]) {
+      await c.query(`INSERT INTO pedidos (cliente_id, tipo_entrega, forma_pagamento, status, cancelado_motivo, subtotal_centavos, frete_centavos, total_centavos)
+        VALUES ($1, 'retirada', 'na_loja', 'cancelado', $2, 100, 0, 100)`, [uid, m]);
+    }
+    await page.reload();
+    await page.getByText("Retirar na loja").first().click();
+    await expect(formas.getByRole("radio", { name: /Pagar na loja/ })).toBeDisabled();
+    await expect(page.getByText(/pedidos não retirados ou não recebidos/)).toBeVisible();
+  } finally {
+    await c.query("UPDATE configuracoes SET valor = '0' WHERE chave = 'pagar_depois_min_pedidos'");
+    await c.end();
+  }
+});
+
+test("loja marca 'não retirou': cancela, devolve estoque e conta falta", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Adicionar / }).first().click();
+  await page.goto("/checkout");
+  await page.getByText("Retirar na loja").first().click();
+  await page.getByRole("radiogroup", { name: "Forma de pagamento" }).getByText("Pagar na loja").click();
+  await page.getByRole("button", { name: "Confirmar pedido" }).last().click();
+  await expect(page).toHaveURL(/\/conta\/pedido\//);
+  await expect(page.getByText(/Retire e pague na loja até/)).toBeVisible();
+  const numero = (await page.getByRole("heading", { name: /Pedido #\d+/ }).textContent())!.match(/#(\d+)/)![1];
+
+  await entrar(page, ADMIN);
+  await page.goto("/admin/pedidos");
+  const card = page.locator(".card", { hasText: `#${numero}` }).first();
+  await card.getByRole("button", { name: "Não retirou" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: /Sim, continuar|Confirmar/ }).click();
+  await expect(page.locator(".card", { hasText: `#${numero}` }).first().getByText("Cancelado: cliente não retirou")).toBeVisible();
+  await expect(page.locator(".card", { hasText: `#${numero}` }).first().getByText("⚠ 1 falta")).toBeVisible();
+});

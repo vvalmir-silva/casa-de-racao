@@ -47,7 +47,7 @@ type Produto = { id: string; nome: string; preco_centavos: number; peso_kg: stri
  * Cria o pedido com validação completa no servidor:
  * recalcula preços/peso/frete, confere estoque e baixa em transação.
  */
-export async function criarPedido(clienteId: string, input: NovoPedidoInput, agora: Date = new Date()) {
+export async function criarPedido(clienteId: string, input: NovoPedidoInput, agora: Date = new Date(), opts: { sistema?: boolean } = {}) {
   const ids = input.itens.map((i) => i.id);
   const produtos = (await sql`
     SELECT id, nome, preco_centavos, peso_kg, estoque, ativo FROM produtos WHERE id = ANY(${ids}::uuid[])
@@ -108,6 +108,11 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
   }
 
   const total = Math.max(0, subtotal + frete - desconto);
+  if (!opts.sistema) {
+    const { conferirPagarDepois } = await import("./protecoes");
+    const bloqueio = await conferirPagarDepois(clienteId, input.forma_pagamento, total);
+    if (bloqueio) throw new ErroPedido(bloqueio);
+  }
   if (!(PAGAMENTOS_POR_ENTREGA[input.tipo_entrega] ?? []).includes(input.forma_pagamento)) {
     throw new ErroPedido(input.tipo_entrega === "retirada"
       ? "Na retirada, pague pelo app (PIX) ou na loja."
@@ -169,7 +174,7 @@ export async function criarPedido(clienteId: string, input: NovoPedidoInput, ago
 }
 
 /** Cancela pedido e devolve estoque (cliente só até 'pago'; admin sempre, exceto entregue). */
-export async function cancelarPedido(pedidoId: string, porUsuarioId: string, admin: boolean) {
+export async function cancelarPedido(pedidoId: string, porUsuarioId: string | null, admin: boolean, motivo?: string) {
   return comTransacao(async (q) => {
     const r = await q(`SELECT cliente_id, status FROM pedidos WHERE id = $1 FOR UPDATE`, [pedidoId]);
     const p = r.rows[0] as { cliente_id: string; status: string } | undefined;
@@ -186,6 +191,7 @@ export async function cancelarPedido(pedidoId: string, porUsuarioId: string, adm
       ]);
     }
     await q(`UPDATE cupons SET usos = GREATEST(0, usos - 1) WHERE codigo = (SELECT cupom_codigo FROM pedidos WHERE id = $1)`, [pedidoId]);
-    await q(`UPDATE pedidos SET status = 'cancelado', rota_id = NULL, ordem_rota = NULL WHERE id = $1`, [pedidoId]);
+    await q(`UPDATE pedidos SET status = 'cancelado', rota_id = NULL, ordem_rota = NULL, cancelado_em = now(), cancelado_motivo = $2 WHERE id = $1`,
+      [pedidoId, motivo ?? (admin ? "loja" : "cliente")]);
   });
 }

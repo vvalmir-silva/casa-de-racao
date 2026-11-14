@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 type Pedido = {
   id: string; numero: number; status: string; tipo_entrega: string; data_entrega: string | null; endereco: Record<string, string> | null;
   subtotal_centavos: number; frete_centavos: number; total_centavos: number; forma_pagamento: string; troco_para_centavos: number | null;
-  observacoes: string | null; comprovante_url: string | null; recebido_por: string | null; entregue_em: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
+  observacoes: string | null; comprovante_url: string | null; recebido_por: string | null; cancelado_motivo: string | null; entregue_em: string | null; cupom_codigo: string | null; desconto_centavos: number; inicio: string | null; fim: string | null; criado_em: string;
 };
 
 export default async function PedidoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ novo?: string; avaliado?: string }> }) {
@@ -61,6 +61,18 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
         </div>
       )}
 
+      {p.tipo_entrega === "retirada" && p.forma_pagamento === "na_loja" && ["pago", "separado"].includes(p.status) && Number(cfg.retirada_prazo_cancelar_horas ?? 48) > 0 && (
+        <div className="rounded-2xl bg-kibble-50 p-4 text-sm text-ink">
+          <b>Retire e pague na loja até {new Date(new Date(p.criado_em).getTime() + Number(cfg.retirada_prazo_cancelar_horas ?? 48) * 3600_000).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}.</b>
+          <div className="text-ink-2">Depois disso o pedido é cancelado automaticamente. {cfg.loja_endereco}</div>
+        </div>
+      )}
+      {p.status === "cancelado" && p.cancelado_motivo && ["pix_expirado", "nao_retirado", "nao_recebido"].includes(p.cancelado_motivo) && (
+        <div className="rounded-2xl bg-page p-4 text-sm text-ink-2">
+          {p.cancelado_motivo === "pix_expirado" ? "Cancelado porque o PIX não foi pago a tempo." : p.cancelado_motivo === "nao_retirado" ? "Cancelado porque não foi retirado no prazo." : "Cancelado porque não conseguimos entregar."}
+          {" "}Os itens voltaram para a loja. <a href="/" className="font-bold text-pine-700 underline">Fazer novo pedido</a>
+        </div>
+      )}
       {podeAvaliar && <div id="avaliar"><AvaliacaoForm pedidoId={p.id} action={avaliarPedido} /></div>}
       {aval && (
         <div className="card space-y-1">

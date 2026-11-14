@@ -2,9 +2,12 @@ import Link from "next/link";
 import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { AdminNav } from "./AdminNav";
+import { after } from "next/server";
+import { expirarPendencias } from "@/lib/protecoes";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await exigirSessao(["admin"]);
+  after(() => expirarPendencias().catch(() => {}));
   const fracas = (await sql`SELECT nome FROM usuarios WHERE senha_padrao AND ativo ORDER BY papel, nome`.catch(() => [])) as { nome: string }[];
   return (
     <div className="admin-grid md:-mx-4 md:grid md:grid-cols-[220px_1fr] md:gap-0">

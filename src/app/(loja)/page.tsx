@@ -9,11 +9,14 @@ import { getSessao } from "@/lib/auth";
 import { jaComprados } from "@/lib/repetir";
 import { buscarProdutos } from "@/lib/busca";
 import { descontoPct } from "@/lib/ofertas";
+import { after } from "next/server";
+import { expirarPendencias } from "@/lib/protecoes";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
   const { cat, q } = await searchParams;
+  after(() => expirarPendencias().catch(() => {}));
   if (q) return { title: `Busca: ${q}`, robots: { index: false, follow: true } };
   if (!cat) return {};
   const [c] = (await sql`SELECT nome FROM categorias WHERE slug = ${cat}`) as { nome: string }[];

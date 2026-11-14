@@ -20,7 +20,10 @@ type Frete = { atende: boolean; zona: { nome: string } | null; opcoes: Opcao[] }
 
 const vazio = { apelido: "Casa", cep: "", logradouro: "", numero: "", complemento: "", sem_complemento: false, bairro: "", cidade: "", uf: "", referencia: "" };
 
-export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo }: { enderecos: EnderecoSalvo[]; pixChave: string; lojaEndereco: string; freteGratisMinimo: number }) {
+export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo, regraPagarDepois, prazoRetiradaHoras = 0 }: {
+  enderecos: EnderecoSalvo[]; pixChave: string; lojaEndereco: string; freteGratisMinimo: number;
+  regraPagarDepois: { liberado: boolean; motivo?: string; valorMax: number }; prazoRetiradaHoras?: number;
+}) {
   const { itens, subtotal, peso, pronto, limpar } = useCarrinho();
   const router = useRouter();
   const [enderecoId, setEnderecoId] = useState<string | "novo">(enderecos[0]?.id ?? "novo");
@@ -82,6 +85,11 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   const freteFinal = cupom?.frete_gratis ? 0 : freteBase;
   const desconto = cupom && !cupom.frete_gratis ? cupom.desconto_centavos : 0;
   const total = Math.max(0, subtotal + freteFinal - desconto);
+  const bloqueioPagarDepois = !regraPagarDepois.liberado
+    ? regraPagarDepois.motivo ?? "Por enquanto, só PIX pelo app."
+    : regraPagarDepois.valorMax > 0 && total > regraPagarDepois.valorMax
+      ? `Pedidos acima de ${brl(regraPagarDepois.valorMax)} são pagos por PIX pelo app.`
+      : null;
 
   async function aplicarCupom() {
     setCupomErro("");
@@ -92,11 +100,15 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   }
   const faltaGratis = freteGratisMinimo - subtotal;
 
+  // pagar depois bloqueado (1º pedido, valor alto ou faltas): volta para PIX
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => { if (bloqueioPagarDepois && pagamento !== "pix") setPagamento("pix"); }, [bloqueioPagarDepois, pagamento]);
+
   if (!pronto || itens.length === 0) return null;
 
   const retirada = opcao?.tipo === "retirada";
   const opcoesPagamento: [FormaPagamento, string, string][] = retirada
-    ? [["pix", "PIX pelo app", "Paga agora e só retira"], ["na_loja", "Pagar na loja", "Dinheiro, cartão ou PIX no balcão"]]
+    ? [["pix", "PIX pelo app", "Paga agora e só retira"], ["na_loja", "Pagar na loja", `Dinheiro, cartão ou PIX no balcão${prazoRetiradaHoras ? ` · retire em até ${prazoRetiradaHoras}h` : ""}`]]
     : [["pix", "PIX pelo app", "Confirmação na hora"], ["dinheiro", "Dinheiro na entrega", "Avise se precisa de troco"], ["cartao_entrega", "Cartão na entrega", "Débito ou crédito na maquininha"]];
 
   function enviar() {
@@ -200,14 +212,18 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           <h2 className="h2">Pagamento</h2>
           {retirada && <p className="-mt-1 text-sm text-ink-3">Você vai retirar na loja: pague agora pelo app ou na hora de retirar.</p>}
           <div role="radiogroup" aria-label="Forma de pagamento" className={`grid gap-2 ${opcoesPagamento.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-            {opcoesPagamento.map(([v, l, d]) => (
-              <label key={v} className={`flex cursor-pointer flex-col rounded-2xl border-2 p-3.5 text-sm transition-colors ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-page bg-page hover:border-line-2"}`}>
-                <input type="radio" name="forma_pagamento" className="sr-only" checked={pagamento === v} onChange={() => setPagamento(v)} />
+            {opcoesPagamento.map(([v, l, d]) => {
+              const travado = v !== "pix" && !!bloqueioPagarDepois;
+              return (
+              <label key={v} className={`flex flex-col rounded-2xl border-2 p-3.5 text-sm transition-colors ${travado ? "cursor-not-allowed border-page bg-page opacity-50" : pagamento === v ? "cursor-pointer border-pine-700 bg-pine-50" : "cursor-pointer border-page bg-page hover:border-line-2"}`}>
+                <input type="radio" name="forma_pagamento" className="sr-only" checked={pagamento === v} disabled={travado} onChange={() => setPagamento(v)} />
                 <span className="font-bold text-ink">{l}</span>
                 <span className="text-[12.5px] text-ink-3">{d}</span>
               </label>
-            ))}
+              );
+            })}
           </div>
+          {bloqueioPagarDepois && <p role="note" className="rounded-xl bg-kibble-50 px-3 py-2 text-sm text-ink">{bloqueioPagarDepois}</p>}
           {pagamento === "pix" && pixChave && (
             <p className="text-sm text-ink-2">Chave PIX: <b>{pixChave}</b>. O pedido é confirmado após o pagamento.</p>
           )}

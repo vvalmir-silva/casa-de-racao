@@ -50,5 +50,5 @@ async function criarPedidoAssinatura(a: { cliente_id: string; endereco_id: strin
     endereco_id: a.endereco_id,
     forma_pagamento: a.forma_pagamento,
     observacoes: "Pedido gerado automaticamente pela assinatura",
-  });
+  }, new Date(), { sistema: true });
 }

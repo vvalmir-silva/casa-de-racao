@@ -41,6 +41,15 @@ export default async function ConfigAdmin() {
         <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="whatsapp_notificacoes" defaultChecked={(c.whatsapp_notificacoes ?? "true") === "true"} /> Enviar notificações automáticas por WhatsApp</label>
         <div><label className="label">Lembrete de recompra (dias antes de acabar)</label><input name="recompra_dias_antes" className="input" defaultValue={c.recompra_dias_antes ?? "3"} /></div>
         <div><label className="label">Validade do PIX (minutos)</label><input name="pix_expiracao_minutos" className="input" defaultValue={c.pix_expiracao_minutos ?? "60"} /></div>
+        <h2 className="h2 col-span-full mt-3">Proteções de pagamento</h2>
+        <p className="col-span-full -mt-1 text-xs text-ink-3">Valem para pagar na entrega (dinheiro/cartão) e pagar na loja. PIX não pago some sozinho após a “Validade do PIX”. Use 0 para desligar uma regra.</p>
+        <div><label className="label">Liberar pagar depois após (pedidos entregues)</label><input name="pagar_depois_min_pedidos" className="input" inputMode="numeric" defaultValue={c.pagar_depois_min_pedidos ?? "1"} /></div>
+        <div><label className="label">Pagar depois até (R$)</label><input name="pagar_depois_max_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "pagar_depois_max_centavos")} /></div>
+        <div><label className="label">Faltas para exigir só PIX</label><input name="faltas_bloqueio" className="input" inputMode="numeric" defaultValue={c.faltas_bloqueio ?? "2"} /></div>
+        <div><label className="label">Cancelar retirada não buscada após (horas)</label><input name="retirada_prazo_cancelar_horas" className="input" inputMode="numeric" defaultValue={c.retirada_prazo_cancelar_horas ?? "48"} /></div>
+        <div><label className="label">Lembrar de retirar após (horas)</label><input name="retirada_lembrete_horas" className="input" inputMode="numeric" defaultValue={c.retirada_lembrete_horas ?? "24"} /></div>
+        <div><label className="label">Lembrete de carrinho após (horas)</label><input name="carrinho_lembrete_horas" className="input" inputMode="numeric" defaultValue={c.carrinho_lembrete_horas ?? "20"} /></div>
+
         <h2 className="h2 col-span-full mt-3">Vitrine e rodapé</h2>
         <div><label className="label">Parcelamento no cartão (máx. de parcelas)</label><input name="parcelas_max" className="input" inputMode="numeric" defaultValue={c.parcelas_max ?? "1"} /></div>
         <div><label className="label">Parcela mínima (R$)</label><input name="parcela_minima_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "parcela_minima_centavos")} /></div>

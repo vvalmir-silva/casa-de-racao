@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { brl, FORMA_PAGAMENTO } from "@/lib/utils";
 import { linksMaps, formatarDistancia, formatarDuracao } from "@/lib/rota-cliente";
-import { reordenarRota, otimizarRotaAction } from "../admin/actions";
+import { reordenarRota, otimizarRotaAction, registrarFalta } from "../admin/actions";
+import { BotaoAction } from "@/components/FormAction";
 import { iniciarRota, concluirRota } from "./actions";
 import { EntregaForm } from "./EntregaForm";
 import { vizinhosDeEndereco, rotuloComplemento } from "@/lib/mesmo-endereco";
@@ -84,6 +85,10 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
             <a className="btn bg-white text-ink" href={`https://wa.me/55${prox.telefone}?text=${encodeURIComponent(`Olá ${prox.cliente.split(" ")[0]}! Sou o entregador da Casa de Ração, estou chegando com seu pedido #${prox.numero}.`)}`} target="_blank">Avisar</a>
           </div>
           <button className="btn-accent mt-2 w-full" onClick={() => setEntregando({ id: prox.id, numero: prox.numero })}>Entregue</button>
+          <BotaoAction className="btn mt-1 w-full text-white/80 hover:bg-white/10" action={registrarFalta} args={[prox.id]}
+            confirmar={`Não conseguiu entregar o #${prox.numero}? O pedido será cancelado e a mercadoria volta para a loja.`}>
+            Não consegui entregar
+          </BotaoAction>
         </div>
       )}
 

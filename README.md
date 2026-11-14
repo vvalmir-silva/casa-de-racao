@@ -64,6 +64,14 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 - **Carrinho salvo e lembrete:** para cliente logado, o carrinho é guardado no servidor (tabela `carrinhos`) e volta em outro aparelho. O cron diário de recompra (10h BRT) também manda WhatsApp para quem deixou itens há mais de `carrinho_lembrete_horas` (padrão 20h, até 7 dias), uma vez por carrinho, respeitando “Lembretes no WhatsApp” em Minha conta.
 - **Planilha de produtos:** Admin → Produtos → “Importar planilha”. Baixe o modelo (já com os produtos atuais), edite no Excel/Google Planilhas e envie .xlsx ou .csv. Prévia com novos/atualizar/erros antes de gravar; estoque ajustado entra no histórico de movimentos.
 
+## Proteções de pagamento
+
+- **PIX não pago:** após a validade do PIX (+10 min), o pedido é cancelado e o estoque volta (`pix_expirado`).
+- **Retirada "pagar na loja":** lembrete no WhatsApp após `retirada_lembrete_horas` (24h) e cancelamento após `retirada_prazo_cancelar_horas` (48h) (`nao_retirado`). O cliente vê o prazo no pedido.
+- **Pagar depois** (dinheiro/cartão na entrega, pagar na loja) só depois de `pagar_depois_min_pedidos` pedidos entregues e até `pagar_depois_max_centavos`; quem soma `faltas_bloqueio` faltas fica só com PIX. Tudo em Configurações → Proteções (0 desliga).
+- **Faltas:** "Não retirou" / "Não recebeu" em Admin → Pedidos e "Não consegui entregar" na tela do motorista cancelam, devolvem estoque e contam falta.
+- A limpeza roda no cron diário e, no máximo 1x/min, ao abrir a loja, o checkout ou o painel (`src/lib/protecoes.ts`). PIX aprovado em pedido já cancelado gera alerta para a loja.
+
 ## Layout da loja
 
 - **Cores:** azul-petróleo (`pine`, cor principal) e tangerina (`kibble`, destaque), vermelho `oferta` para descontos. Tokens em `tailwind.config.ts`.
