@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRouter } from "next/navigation";
 import { mascaraCep } from "@/lib/utils";
 import { useBuscaCep } from "@/hooks/useBuscaCep";
@@ -9,10 +10,23 @@ import { salvarEndereco, excluirEndereco, cancelarMeuPedido, alternarLembretes }
 
 export function ExcluirEnderecoBotao({ id }: { id: string }) {
   const [p, start] = useTransition();
+  const [aberto, setAberto] = useState(false);
+  const fechar = useCallback(() => setAberto(false), []);
   return (
-    <button className="text-xs text-red-600" disabled={p} onClick={() => { if (confirm("Excluir endereço?")) start(() => excluirEndereco(id)); }}>
-      excluir
-    </button>
+    <>
+      <button className="text-xs text-red-600" disabled={p} onClick={() => setAberto(true)}>excluir</button>
+      <ConfirmDialog
+        aberto={aberto}
+        perigo
+        titulo="Excluir este endereço?"
+        textoConfirmar="Sim, excluir"
+        carregando={p}
+        onFechar={fechar}
+        onConfirmar={() => start(async () => { await excluirEndereco(id); setAberto(false); })}
+      >
+        Assinaturas que usam este endereço serão pausadas.
+      </ConfirmDialog>
+    </>
   );
 }
 
@@ -63,18 +77,35 @@ export function EnderecoForm() {
   );
 }
 
-export function CancelarPedidoBotao({ id }: { id: string }) {
+export function CancelarPedidoBotao({ id, numero, pago }: { id: string; numero?: number; pago?: boolean }) {
   const [p, start] = useTransition();
+  const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
+  const fechar = useCallback(() => { setAberto(false); setErro(""); }, []);
   return (
-    <div>
-      <button className="btn-outline text-red-700" disabled={p} onClick={() => {
-        if (!confirm("Cancelar este pedido?")) return;
-        start(async () => { const r = await cancelarMeuPedido(id); if (r?.erro) setErro(r.erro); else router.refresh(); });
-      }}>Cancelar pedido</button>
-      {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
-    </div>
+    <>
+      <button className="btn-outline w-full text-red-700 sm:w-auto" onClick={() => setAberto(true)}>Cancelar pedido</button>
+      <ConfirmDialog
+        aberto={aberto}
+        perigo
+        titulo={`Cancelar o pedido${numero ? ` #${numero}` : ""}?`}
+        textoConfirmar="Sim, cancelar"
+        textoVoltar="Manter pedido"
+        carregando={p}
+        erro={erro}
+        onFechar={fechar}
+        onConfirmar={() => start(async () => {
+          const r = await cancelarMeuPedido(id);
+          if (r?.erro) return setErro(r.erro);
+          setAberto(false);
+          router.refresh();
+        })}
+      >
+        <p>O pedido não será entregue e não dá para desfazer.</p>
+        {pago && <p className="mt-2 rounded-xl bg-kibble-50 p-2.5 text-ink">Como o PIX já foi pago, fale com a loja pelo WhatsApp para receber o valor de volta.</p>}
+      </ConfirmDialog>
+    </>
   );
 }
 

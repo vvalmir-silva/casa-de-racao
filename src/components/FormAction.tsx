@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useCallback, useRef, useState, useTransition, type ReactNode } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { useRouter } from "next/navigation";
 
 type R = { ok?: true; erro?: string } | void;
@@ -11,25 +12,32 @@ export function FormAction({ action, children, className, onOk, confirmar }: {
 }) {
   const [erro, setErro] = useState("");
   const [p, start] = useTransition();
+  const [pendente, setPendente] = useState<FormData | null>(null);
   const router = useRouter();
+  const executar = (fd: FormData) => start(async () => {
+    setErro("");
+    const r = await action(fd);
+    setPendente(null);
+    if (r && "erro" in r && r.erro) return setErro(r.erro);
+    onOk?.();
+    router.refresh();
+  });
+  const fechar = useCallback(() => setPendente(null), []);
   return (
     <form
       className={className}
       onSubmit={(e) => {
         e.preventDefault();
-        if (confirmar && !confirm(confirmar)) return;
         const fd = new FormData(e.currentTarget);
-        start(async () => {
-          setErro("");
-          const r = await action(fd);
-          if (r && "erro" in r && r.erro) return setErro(r.erro);
-          onOk?.();
-          router.refresh();
-        });
+        if (confirmar) return setPendente(fd);
+        executar(fd);
       }}
     >
       <fieldset disabled={p} className="contents">{children}</fieldset>
       {erro && <p className="col-span-full mt-1 text-sm text-red-600">{erro}</p>}
+      {confirmar && (
+        <ConfirmDialog aberto={!!pendente} titulo={confirmar} carregando={p} onFechar={fechar} onConfirmar={() => pendente && executar(pendente)} />
+      )}
     </form>
   );
 }
@@ -40,17 +48,37 @@ export function BotaoAction<A extends any[]>({ action, args, children, className
   action: (...a: A) => Promise<R>; args: A; children: ReactNode; className?: string; confirmar?: string;
 }) {
   const [p, start] = useTransition();
+  const [aberto, setAberto] = useState(false);
+  const [erro, setErro] = useState("");
   const router = useRouter();
+  const argsRef = useRef(args);
+  argsRef.current = args;
+  const executar = () => start(async () => {
+    setErro("");
+    const r = await action(...argsRef.current);
+    if (r && "erro" in r && r.erro) { setErro(r.erro); if (!confirmar) alert(r.erro); return; }
+    setAberto(false);
+    router.refresh();
+  });
+  const fechar = useCallback(() => { setAberto(false); setErro(""); }, []);
+  const perigo = !!confirmar && /cancel|exclu|desativ|remov/i.test(confirmar);
   return (
-    <button
-      className={className}
-      disabled={p}
-      onClick={() => {
-        if (confirmar && !confirm(confirmar)) return;
-        start(async () => { const r = await action(...args); if (r && "erro" in r && r.erro) alert(r.erro); router.refresh(); });
-      }}
-    >
-      {children}
-    </button>
+    <>
+      <button className={className} disabled={p} onClick={() => (confirmar ? setAberto(true) : executar())}>
+        {children}
+      </button>
+      {confirmar && (
+        <ConfirmDialog
+          aberto={aberto}
+          titulo={confirmar}
+          perigo={perigo}
+          textoConfirmar={perigo ? "Sim, continuar" : "Confirmar"}
+          carregando={p}
+          erro={erro}
+          onFechar={fechar}
+          onConfirmar={executar}
+        />
+      )}
+    </>
   );
 }

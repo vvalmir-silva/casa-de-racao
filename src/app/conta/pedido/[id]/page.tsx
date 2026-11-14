@@ -91,7 +91,7 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
         </div>
       </div>
 
-      {["aguardando_pagamento", "pago"].includes(p.status) && <CancelarPedidoBotao id={p.id} />}
+      {["aguardando_pagamento", "pago"].includes(p.status) && <CancelarPedidoBotao id={p.id} numero={p.numero} pago={p.status === "pago" && p.forma_pagamento === "pix"} />}
     </div>
   );
 }

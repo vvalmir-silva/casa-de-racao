@@ -106,3 +106,26 @@ test("cliente avalia a entrega e a avaliação aparece no painel e na vitrine", 
   await page.goto("/");
   await expect(page.getByText("Quem compra, recomenda")).toHaveCount(0);
 });
+
+test("cancelar pedido abre pop-up de confirmação", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.getByRole("button", { name: /^Adicionar / }).first().click();
+  await page.goto("/checkout");
+  await page.getByText("Dinheiro na entrega").click();
+  await page.getByRole("button", { name: "Confirmar pedido" }).last().click();
+  await expect(page).toHaveURL(/\/conta\/pedido\//);
+
+  await page.getByRole("button", { name: "Cancelar pedido" }).click();
+  const popup = page.getByRole("alertdialog");
+  await expect(popup.getByRole("heading", { name: /Cancelar o pedido #\d+\?/ })).toBeVisible();
+  await expect(popup.getByRole("button", { name: "Manter pedido" })).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(popup).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Cancelar pedido" }).click();
+  await popup.getByRole("button", { name: "Sim, cancelar" }).click();
+  await expect(popup).toHaveCount(0);
+  await expect(page.getByText("Cancelado", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancelar pedido" })).toHaveCount(0);
+});
