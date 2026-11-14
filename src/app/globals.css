@@ -7,21 +7,25 @@ html { -webkit-text-size-adjust: 100%; }
 body { @apply bg-page text-ink antialiased; font-feature-settings: "ss01", "cv11"; }
 input, select, textarea { font-size: 16px; }
 @media (min-width: 640px) { input, select, textarea { font-size: 14px; } }
+@keyframes subir { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes surgir { from { transform: translateY(12px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+.snap-x-row { scroll-snap-type: x mandatory; scroll-padding-inline: 1rem; }
+.snap-x-row > * { scroll-snap-align: start; }
 .no-scrollbar { scrollbar-width: none; } .no-scrollbar::-webkit-scrollbar { display: none; }
 :focus-visible { outline: 2px solid #E8A33D; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 
 @layer components {
-  .btn { @apply inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl px-4 py-2 text-[15px] font-bold tracking-tight transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn { @apply inline-flex min-h-[48px] active:scale-[.98] items-center justify-center gap-2 rounded-full px-4 py-2 text-[15px] font-bold tracking-tight transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-primary { @apply btn bg-pine-700 text-white hover:bg-pine-800 active:bg-pine-900; }
   .btn-accent { @apply btn bg-kibble-500 text-ink hover:bg-kibble-600; }
   .btn-outline { @apply btn border border-line-2 bg-white text-ink hover:bg-page; }
   .btn-ghost { @apply btn text-ink-2 hover:bg-pine-50 hover:text-pine-700; }
   .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
-  .input { @apply w-full min-h-[46px] rounded-xl border border-line-2 bg-white px-3.5 py-2 text-ink placeholder:text-ink-4 outline-none transition focus:border-pine-500 focus:ring-4 focus:ring-pine-50 sm:text-sm; }
+  .input { @apply w-full min-h-[48px] rounded-2xl border border-line-2 bg-white px-3.5 py-2 text-ink placeholder:text-ink-4 outline-none transition focus:border-pine-500 focus:ring-4 focus:ring-pine-50 sm:text-sm; }
   .label { @apply mb-1.5 block text-[13px] font-semibold text-ink-2; }
-  .card { @apply rounded-2xl border border-line bg-white p-4 sm:p-5; }
-  .card-flat { @apply rounded-2xl bg-white p-4 sm:p-5; }
+  .card { @apply rounded-[24px] bg-white p-4 sm:p-6; }
+  .card-flat { @apply rounded-[24px] bg-white p-4 sm:p-6; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
   .chip { @apply inline-flex min-h-[40px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line-2 bg-white px-4 text-sm font-semibold text-ink-2 transition hover:border-pine-500 hover:text-pine-700; }
   .chip-on { @apply border-pine-700 bg-pine-700 text-white hover:bg-pine-700 hover:text-white; }
@@ -33,11 +37,12 @@ input, select, textarea { font-size: 16px; }
   .table th { @apply border-b border-line px-3 py-2.5 text-left text-xs font-bold text-ink-3; }
   .table td { @apply border-b border-line px-3 py-3 align-top; }
   .table-cards thead { @apply hidden sm:table-header-group; }
-  .table-cards tr { @apply mb-2 block rounded-2xl border border-line bg-white p-4 sm:mb-0 sm:table-row sm:rounded-none sm:border-0 sm:p-0; }
+  .table-cards tr { @apply mb-2 block rounded-[20px] bg-white p-4 sm:mb-0 sm:table-row sm:rounded-none sm:border-0 sm:p-0; }
   .table-cards td { @apply block border-0 px-0 py-1 sm:table-cell sm:border-b sm:px-3 sm:py-3; }
   .table-cards td[data-label]::before { content: attr(data-label); @apply mr-2 text-xs font-bold text-ink-4 sm:hidden; }
   .section-title { @apply mb-3 flex items-end justify-between; }
-  .stat { @apply rounded-2xl border border-line bg-white p-4; }
+  .stat { @apply rounded-[20px] bg-white p-4 transition hover:shadow-card; }
   .stat-v { @apply mt-1 text-2xl font-extrabold tracking-tight text-ink; }
   .stat-t { @apply text-[13px] font-semibold text-ink-3; }
 }
+input[type=radio], input[type=checkbox] { accent-color: #1B4D3E; width: 18px; height: 18px; }

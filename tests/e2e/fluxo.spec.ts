@@ -13,7 +13,7 @@ test("cliente se cadastra e fecha pedido com cupom e entrega em rota", async ({ 
   await page.getByRole("button", { name: "Criar conta" }).click();
   await expect(page).toHaveURL("/");
 
-  await page.getByRole("article").filter({ hasText: "Ração Gatos Castrados 10 kg" }).getByRole("button", { name: /Adicionar/ }).click();
+  await page.getByRole("button", { name: "Adicionar Ração Gatos Castrados 10 kg" }).first().click();
   // busca de CEP simulada (o teste não depende de serviço externo)
   await page.route("**/api/cep?cep=02225010", (r) =>
     r.fulfill({ json: { cep: "02225010", logradouro: "Rua das Flores", bairro: "Vila Guilherme", cidade: "São Paulo", uf: "SP" } }));
@@ -40,7 +40,7 @@ test("cliente se cadastra e fecha pedido com cupom e entrega em rota", async ({ 
 
 test("cupom de primeira compra não vale na segunda", async ({ page }) => {
   await entrar(page, cliente);
-  await page.getByRole("article").first().getByRole("button", { name: /Adicionar/ }).click();
+  await page.getByRole("button", { name: /^Adicionar / }).first().click();
   await page.goto("/checkout");
   await page.getByPlaceholder("Cupom").fill("BEMVINDO10");
   await page.getByRole("button", { name: "Aplicar" }).click();

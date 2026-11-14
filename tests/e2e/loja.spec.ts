@@ -3,9 +3,9 @@ import { semErroNemOverflow } from "./helpers";
 
 test("home lista produtos e filtra por categoria", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Ração na sua porta/ })).toBeVisible();
-  await expect(page.getByRole("article")).toHaveCount(11);
-  await page.getByRole("link", { name: /Gatos/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Ração na porta, no dia certo." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mais pedidos no bairro" })).toBeVisible();
+  await page.getByRole("navigation", { name: "Categorias" }).getByRole("link", { name: "Gatos" }).click();
   await expect(page).toHaveURL(/cat=racao-gatos/);
   await expect(page.getByRole("article")).toHaveCount(3);
   await semErroNemOverflow(page);
@@ -13,30 +13,44 @@ test("home lista produtos e filtra por categoria", async ({ page }) => {
 
 test("busca sem resultado mostra caminho de volta", async ({ page }) => {
   await page.goto("/?q=xyzinexistente");
-  await expect(page.getByText("Nada por aqui")).toBeVisible();
-  await page.getByRole("link", { name: "Ver tudo" }).click();
+  await expect(page.getByText("Nada encontrado")).toBeVisible();
+  await page.getByRole("link", { name: "Ver todos os produtos" }).click();
   await expect(page.getByRole("article").first()).toBeVisible();
 });
 
-test("consulta de CEP no topo", async ({ page }) => {
+test("endereço de entrega pelo chip do topo", async ({ page }) => {
+  await page.route("**/api/cep?cep=02225010", (r) => r.fulfill({ json: { cep: "02225010", logradouro: "Rua X", bairro: "Vila Guilherme", cidade: "São Paulo", uf: "SP" } }));
   await page.goto("/");
-  await page.getByLabel("CEP").fill("02225010");
-  await page.getByRole("button", { name: "Ver entrega" }).click();
-  await expect(page.getByText("Entregamos aí.")).toBeVisible();
-  await page.getByLabel("CEP").fill("99999999");
-  await page.getByRole("button", { name: "Ver entrega" }).click();
-  await expect(page.getByText("Ainda não entregamos neste CEP.")).toBeVisible();
+  await page.getByRole("button", { name: /Informe seu CEP/ }).click();
+  const folha = page.getByRole("dialog", { name: "Endereço de entrega" });
+  await folha.getByLabel("CEP").fill("02225010");
+  await folha.getByRole("button", { name: "Consultar" }).click();
+  await expect(folha.getByText("Entregamos na Vila Guilherme!")).toBeVisible();
+  await folha.getByRole("button", { name: "Continuar comprando" }).click();
+  await expect(page.getByRole("button", { name: /Vila Guilherme/ })).toBeVisible();
+  await page.getByRole("button", { name: /Vila Guilherme/ }).click();
+  await folha.getByLabel("CEP").fill("99999999");
+  await folha.getByRole("button", { name: "Consultar" }).click();
+  await expect(folha.getByText("Ainda não entregamos nesse CEP")).toBeVisible();
+});
+
+test("botão + vira contador e a barra do carrinho aparece", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Adicionar Alpiste 1 kg" }).first().click();
+  await expect(page.getByRole("button", { name: "Pôr mais um" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Pôr mais um" }).first().click();
+  await expect(page.getByRole("link", { name: /Ver carrinho/ })).toContainText("R$ 25,80");
 });
 
 test("produto → carrinho → alterar quantidade", async ({ page }) => {
   await page.goto("/produto/racao-premium-caes-adultos-15kg");
   await expect(page.getByRole("heading", { name: "Ração Premium Cães Adultos 15 kg" })).toBeVisible();
-  await page.getByRole("button", { name: "Adicionar ao carrinho" }).click();
+  await page.getByRole("button", { name: "Adicionar · R$ 179,90" }).locator("visible=true").click();
+  await page.getByRole("link", { name: /Ver carrinho/ }).locator("visible=true").click();
   await expect(page).toHaveURL(/\/carrinho/);
-  await expect(page.getByText("R$ 179,90").first()).toBeVisible();
-  await page.getByRole("button", { name: "mais" }).click();
+  await page.getByRole("button", { name: "Pôr mais um" }).click();
   await expect(page.getByText("R$ 359,80").first()).toBeVisible();
-  await expect(page.getByText("Frete grátis")).toBeVisible();
+  await expect(page.getByText("Frete grátis na rota do bairro")).toBeVisible();
   await semErroNemOverflow(page);
 });
 

@@ -1,26 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCarrinho } from "@/lib/carrinho";
-import type { ProdutoResumo } from "./ProdutoCard";
+import { brl } from "@/lib/utils";
+import { Contador, type ProdutoResumo } from "./ProdutoCard";
 import { IconCart } from "./Icons";
 
+/** Na página do produto: contador + ir ao carrinho. No celular fica fixo no rodapé. */
 export function AdicionarBotao({ p }: { p: ProdutoResumo }) {
-  const { adicionar } = useCarrinho();
-  const [qtd, setQtd] = useState(1);
-  const router = useRouter();
-  if (p.estoque <= 0) return <button className="btn-outline w-full" disabled>Esgotado</button>;
-  return (
-    <div className="flex items-stretch gap-2">
-      <div className="flex items-center rounded-xl border border-line-2 bg-white">
-        <button className="h-[46px] w-11 text-xl" onClick={() => setQtd((q) => Math.max(1, q - 1))} aria-label="menos">−</button>
-        <span className="w-8 text-center font-bold">{qtd}</span>
-        <button className="h-[46px] w-11 text-xl" onClick={() => setQtd((q) => Math.min(p.estoque, q + 1))} aria-label="mais">+</button>
-      </div>
-      <button className="btn-primary flex-1" onClick={() => { adicionar(p, qtd); router.push("/carrinho"); }}>
-        <IconCart width={18} height={18} /> Adicionar ao carrinho
-      </button>
+  const { itens, adicionar } = useCarrinho();
+  const item = itens.find((i) => i.id === p.id);
+  const sem = p.estoque <= 0;
+
+  const conteudo = sem ? (
+    <button className="btn-outline w-full rounded-full" disabled>Esgotado</button>
+  ) : item ? (
+    <div className="flex items-center gap-3">
+      <Contador p={p} grande />
+      <Link href="/carrinho" className="btn-primary flex-1 rounded-full">Ver carrinho · {brl(item.qtd * p.preco_centavos)}</Link>
     </div>
+  ) : (
+    <button className="btn-primary w-full rounded-full text-[16px]" onClick={() => adicionar({ ...p, peso_kg: Number(p.peso_kg) })}>
+      <IconCart width={20} height={20} /> Adicionar · {brl(p.preco_centavos)}
+    </button>
+  );
+
+  return (
+    <>
+      <div className="hidden md:block">{conteudo}</div>
+      <div className="fixed inset-x-0 bottom-[64px] z-20 border-t border-line/70 bg-white/95 p-3 backdrop-blur-xl md:hidden">{conteudo}</div>
+    </>
   );
 }

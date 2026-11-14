@@ -118,12 +118,12 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           {enderecos.length > 0 && (
             <div className="space-y-2">
               {enderecos.map((e) => (
-                <label key={e.id} className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === e.id ? "border-pine-700 bg-pine-50" : "border-line"}`}>
+                <label key={e.id} className={`flex cursor-pointer gap-3 rounded-2xl border-2 p-3.5 text-sm ${enderecoId === e.id ? "border-pine-700 bg-pine-50" : "border-page bg-page"}`}>
                   <input type="radio" name="end" checked={enderecoId === e.id} onChange={() => setEnderecoId(e.id)} />
                   <div><b>{e.apelido}</b> · {e.logradouro}, {e.numero}{e.complemento ? ` - ${e.complemento}` : ""} · {e.bairro} · {mascaraCep(e.cep)}</div>
                 </label>
               ))}
-              <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${enderecoId === "novo" ? "border-pine-700 bg-pine-50" : "border-line"}`}>
+              <label className={`flex cursor-pointer gap-3 rounded-2xl border-2 p-3.5 text-sm ${enderecoId === "novo" ? "border-pine-700 bg-pine-50" : "border-page bg-page"}`}>
                 <input type="radio" name="end" checked={enderecoId === "novo"} onChange={() => setEnderecoId("novo")} />
                 <div>Novo endereço</div>
               </label>
@@ -164,7 +164,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           )}
           <div className="space-y-2">
             {frete?.opcoes.map((o) => (
-              <label key={chave(o)} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${escolha === chave(o) ? "border-pine-700 bg-pine-50" : "border-line"}`}>
+              <label key={chave(o)} className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3.5 text-sm ${escolha === chave(o) ? "border-pine-700 bg-pine-50" : "border-page bg-page"}`}>
                 <input type="radio" name="ent" checked={escolha === chave(o)} onChange={() => { escolhaManual.current = true; setEscolha(chave(o)); }} className="mt-1" />
                 <div className="flex-1">
                   <div className="font-bold">{o.titulo}</div>
@@ -181,7 +181,7 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           <h2 className="h2">Pagamento</h2>
           <div className="grid gap-2 sm:grid-cols-3">
             {([["pix", "PIX"], ["dinheiro", "Dinheiro na entrega"], ["cartao_entrega", "Cartão na entrega"]] as const).map(([v, l]) => (
-              <label key={v} className={`cursor-pointer rounded-lg border p-3 text-center text-sm ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-line"}`}>
+              <label key={v} className={`cursor-pointer rounded-2xl border-2 p-3.5 text-center text-sm ${pagamento === v ? "border-pine-700 bg-pine-50" : "border-page bg-page"}`}>
                 <input type="radio" className="sr-only" checked={pagamento === v} onChange={() => setPagamento(v)} />{l}
               </label>
             ))}
