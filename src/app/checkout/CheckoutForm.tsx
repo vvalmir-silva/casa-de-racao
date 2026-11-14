@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoComplemento } from "@/components/CampoComplemento";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useCarrinho } from "@/lib/carrinho";
@@ -15,7 +16,7 @@ export type EnderecoSalvo = {
 type Opcao = { tipo: "retirada" | "rota" | "expresso"; titulo: string; descricao: string; taxa_centavos: number; data_entrega: string | null; janela_id: number | null };
 type Frete = { atende: boolean; zona: { nome: string } | null; opcoes: Opcao[] };
 
-const vazio = { apelido: "Casa", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", referencia: "" };
+const vazio = { apelido: "Casa", cep: "", logradouro: "", numero: "", complemento: "", sem_complemento: false, bairro: "", cidade: "", uf: "", referencia: "" };
 
 export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo }: { enderecos: EnderecoSalvo[]; pixChave: string; lojaEndereco: string; freteGratisMinimo: number }) {
   const { itens, subtotal, peso, pronto, limpar } = useCarrinho();
@@ -88,6 +89,10 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
   function enviar() {
     setErro("");
     if (!opcao) return setErro("Escolha uma forma de entrega.");
+    if (opcao.tipo !== "retirada" && enderecoId === "novo" && !novo.complemento.trim() && !novo.sem_complemento) {
+      document.getElementById("ck-complemento")?.focus();
+      return setErro("Informe o complemento (apto, bloco) ou marque “É casa, sem complemento”.");
+    }
     const payload = {
       itens: itens.map((i) => ({ id: i.id, qtd: i.qtd })),
       tipo_entrega: opcao.tipo,
@@ -138,7 +143,8 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
               </div>
               <div className="col-span-2"><label className="label" htmlFor="ck-rua">Rua</label><input id="ck-rua" ref={ruaRef} className="input" autoComplete="address-line1" value={novo.logradouro} onChange={(e) => setNovo({ ...novo, logradouro: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-numero">Número</label><input id="ck-numero" ref={numeroRef} className="input" inputMode="numeric" value={novo.numero} onChange={(e) => setNovo({ ...novo, numero: e.target.value })} /></div>
-              <div><label className="label" htmlFor="ck-complemento">Complemento</label><input id="ck-complemento" className="input" value={novo.complemento} onChange={(e) => setNovo({ ...novo, complemento: e.target.value })} /></div>
+              <CampoComplemento id="ck-complemento" valor={novo.complemento} semComplemento={novo.sem_complemento}
+                onValor={(v) => setNovo({ ...novo, complemento: v })} onSem={(v) => setNovo({ ...novo, sem_complemento: v, complemento: v ? "" : novo.complemento })} />
               <div><label className="label" htmlFor="ck-bairro">Bairro</label><input id="ck-bairro" className="input" value={novo.bairro} onChange={(e) => setNovo({ ...novo, bairro: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-cidade">Cidade</label><input id="ck-cidade" className="input" value={novo.cidade} onChange={(e) => setNovo({ ...novo, cidade: e.target.value })} /></div>
               <div><label className="label" htmlFor="ck-uf">UF</label><input id="ck-uf" className="input" maxLength={2} value={novo.uf} onChange={(e) => setNovo({ ...novo, uf: e.target.value.toUpperCase() })} /></div>

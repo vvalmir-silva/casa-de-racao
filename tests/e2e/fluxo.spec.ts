@@ -22,6 +22,7 @@ test("cliente se cadastra e fecha pedido com cupom e entrega em rota", async ({ 
   await expect(page.getByLabel("Rua", { exact: true })).toHaveValue("Rua das Flores");
   await expect(page.getByLabel("Número", { exact: true })).toBeFocused();
   await page.getByLabel("Número", { exact: true }).fill("100");
+  await page.getByLabel("Complemento", { exact: true }).fill("Apto 32");
 
   const rota = page.getByRole("radio").and(page.locator("[name=ent]")).nth(1);
   await expect(page.getByText(/^Entrega (hoje|amanhã|.+), 18:00–21:00$/)).toBeVisible();
@@ -156,4 +157,36 @@ test("painel mostra o aviso de pedido novo", async ({ page }) => {
   await entrar(page, ADMIN);
   await page.goto("/admin");
   await expect(page.getByText("Aviso de pedido novo")).toBeVisible();
+});
+
+test("complemento é exigido ou marcado como casa", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.goto("/conta");
+  await page.getByRole("button", { name: "+ Novo endereço" }).click();
+  const comp = page.getByLabel("Complemento", { exact: true });
+  await expect(comp).toHaveAttribute("required", "");
+  await page.getByLabel("É casa, sem complemento").check();
+  await expect(comp).toBeDisabled();
+});
+
+test("dois pedidos no mesmo endereço: aviso na rota e etiquetas", async ({ page }) => {
+  await entrar(page, cliente);
+  for (let n = 0; n < 2; n++) {
+    await page.goto("/");
+    await page.getByRole("button", { name: /^Adicionar / }).first().click();
+    await page.goto("/checkout");
+    await page.getByText("Dinheiro na entrega").click();
+    await page.getByRole("button", { name: "Confirmar pedido" }).last().click();
+    await expect(page).toHaveURL(/\/conta\/pedido\//);
+  }
+  await entrar(page, ADMIN);
+  await page.goto(`/admin/rotas?data=${DATA_ROTA}`);
+  await page.getByRole("button", { name: "Criar rota com selecionados" }).click();
+  await expect(page.getByText(/⚠ mesmo endereço que #\d+/).first()).toBeVisible();
+  await page.getByRole("link", { name: /Etiquetas/ }).last().click();
+  await expect(page).toHaveURL(/\/admin\/etiquetas\?rota=/);
+  await expect(page.locator("article.etiqueta")).toHaveCount(2);
+  await expect(page.locator("article.etiqueta").first()).toContainText("Apto 32");
+  await expect(page.locator("article.etiqueta").first()).toContainText(/Mesmo endereço: também #\d+/);
+  await expect(page.locator("article.etiqueta").first()).toContainText("RECEBER");
 });

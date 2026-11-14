@@ -107,3 +107,21 @@ html[data-rolando="baixo"] .barra-flutuante { transform: translateY(64px); trans
   .stat-t { @apply text-[13px] font-semibold text-ink-3; }
 }
 input[type=radio], input[type=checkbox] { accent-color: #1B4D3E; width: 18px; height: 18px; }
+
+/* ---------- Etiquetas ---------- */
+.folha-etiquetas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.etiqueta { display: flex; flex-direction: column; min-height: 62mm; background: #fff; color: #000; border: 1.5px solid #17201C; border-radius: 10px; padding: 10px 12px; break-inside: avoid; page-break-inside: avoid; }
+.etiquetas-termica .folha-etiquetas { grid-template-columns: minmax(0, 380px); }
+.etiquetas-termica .etiqueta { min-height: 140mm; }
+@media print {
+  @page { margin: 8mm; }
+  body { background: #fff !important; }
+  .admin-grid { display: block !important; }
+  .no-print, .topo, .nav-inferior, .admin-nav, .barra-flutuante, [data-print-esconde] { display: none !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .folha-etiquetas { gap: 4mm; grid-template-columns: 1fr 1fr; }
+  .etiqueta { min-height: 64mm; border-radius: 3mm; }
+  .etiquetas-termica .folha-etiquetas { display: block; }
+  .etiquetas-termica .etiqueta { width: 96mm; height: 144mm; margin: 0; page-break-after: always; break-after: page; border: 0; }
+  html.rv [data-reveal] { opacity: 1 !important; transform: none !important; }
+}

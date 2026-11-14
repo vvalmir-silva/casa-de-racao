@@ -7,6 +7,7 @@ import { linksMaps, formatarDistancia, formatarDuracao } from "@/lib/rota-client
 import { reordenarRota, otimizarRotaAction } from "../admin/actions";
 import { iniciarRota, concluirRota } from "./actions";
 import { EntregaForm } from "./EntregaForm";
+import { vizinhosDeEndereco, rotuloComplemento } from "@/lib/mesmo-endereco";
 import type { RotaDoDia } from "./page";
 
 export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoDia; origem: string; fotoObrigatoria: boolean }) {
@@ -19,6 +20,17 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
   const pendentes = paradas.filter((x) => x.status !== "entregue" && x.status !== "cancelado");
   const prox = pendentes[0];
   const ativa = rota.status === "em_andamento";
+  // pendentes no mesmo endereço (prédio/condomínio): avisa para conferir apto e nome
+  const vizinhos = vizinhosDeEndereco(pendentes);
+  const AvisoMesmoEndereco = ({ id, escuro }: { id: string; escuro?: boolean }) => {
+    const v = vizinhos.get(id);
+    if (!v?.length) return null;
+    return (
+      <div role="note" className={`mt-2 rounded-xl border-2 border-dashed px-2.5 py-1.5 text-[13px] font-bold leading-snug ${escuro ? "border-kibble-400 text-kibble-50" : "border-kibble-500 bg-kibble-50 text-ink"}`}>
+        ⚠ Mesmo endereço: também {v.map((o) => `#${o.numero} ${o.cliente.split(" ")[0]} (${rotuloComplemento(o.endereco)})`).join(", ")}. Confira o nº do pedido na etiqueta.
+      </div>
+    );
+  };
 
   function mover(i: number, dir: -1 | 1) {
     const j = i + dir;
@@ -62,7 +74,9 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
         <div className="rounded-2xl bg-pine-700 p-4 text-white">
           <div className="text-[13px] font-bold text-kibble-400">Próxima parada</div>
           <div className="mt-0.5 text-lg font-extrabold">#{prox.numero} · {prox.cliente}</div>
-          <div className="text-sm text-pine-100">{endTxt(prox.endereco)}{prox.endereco.complemento ? ` · ${prox.endereco.complemento}` : ""}</div>
+          <div className="text-sm text-pine-100">{endTxt(prox.endereco)}</div>
+          <div className="mt-1 inline-block rounded-lg bg-white/15 px-2 py-0.5 text-[15px] font-extrabold">{rotuloComplemento(prox.endereco)}</div>
+          <AvisoMesmoEndereco id={prox.id} escuro />
           {prox.forma_pagamento !== "pix" && <div className="mt-1 text-sm font-bold text-kibble-400">Receber {brl(prox.total_centavos)} · {FORMA_PAGAMENTO[prox.forma_pagamento]}{prox.troco_para_centavos ? ` · troco p/ ${brl(prox.troco_para_centavos)}` : ""}</div>}
           <div className="mt-3 grid grid-cols-3 gap-2">
             <a className="btn bg-white text-ink" href={navUrl(prox.endereco)} target="_blank">Maps</a>
@@ -82,11 +96,12 @@ export function RotaMotorista({ rota, origem, fotoObrigatoria }: { rota: RotaDoD
                 <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-extrabold ${feito ? "bg-pine-500 text-white" : "bg-page text-ink"}`}>{feito ? "✓" : i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold">#{x.numero} · {x.cliente}{x.inicio ? <span className="ml-1 font-semibold text-ink-3">{x.inicio.slice(0, 5)}–{x.fim?.slice(0, 5)}</span> : null}</div>
-                  <div className="text-ink-2">{x.endereco.logradouro}, {x.endereco.numero}{x.endereco.complemento ? ` - ${x.endereco.complemento}` : ""} · {x.endereco.bairro}</div>
+                  <div className="text-ink-2">{x.endereco.logradouro}, {x.endereco.numero} · <b className="text-ink">{rotuloComplemento(x.endereco)}</b> · {x.endereco.bairro}</div>
                   {x.endereco.referencia && <div className="text-ink-3">Ref.: {x.endereco.referencia}</div>}
                   <div className="text-ink-3">{x.itens}</div>
                   <div className="font-semibold">{x.forma_pagamento === "pix" ? "PIX · já pago" : `Receber ${brl(x.total_centavos)} · ${FORMA_PAGAMENTO[x.forma_pagamento]}`}{x.troco_para_centavos ? ` · troco p/ ${brl(x.troco_para_centavos)}` : ""}</div>
                   {x.observacoes && <div className="mt-1 rounded-lg bg-kibble-50 px-2 py-1 text-ink">{x.observacoes}</div>}
+                  {!feito && <AvisoMesmoEndereco id={x.id} />}
                 </div>
                 {feito && x.comprovante_url && (
                   // eslint-disable-next-line @next/next/no-img-element

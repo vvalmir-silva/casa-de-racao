@@ -4,6 +4,8 @@ import { comTransacao } from "./pool";
 import { calcularFrete, partesLocais, type OpcaoEntrega } from "./frete";
 import { validarCupom } from "./cupons";
 
+const marcado = (v: unknown) => v === true || v === "on" || v === "true";
+
 export const enderecoSchema = z.object({
   apelido: z.string().trim().min(1).default("Casa"),
   cep: z.string().transform((c) => c.replace(/\D/g, "")).refine((c) => c.length === 8, "CEP inválido"),
@@ -14,7 +16,12 @@ export const enderecoSchema = z.object({
   cidade: z.string().trim().min(2, "Informe a cidade"),
   uf: z.string().trim().length(2, "UF inválida").transform((s) => s.toUpperCase()),
   referencia: z.string().trim().optional().or(z.literal("")),
-});
+  sem_complemento: z.preprocess(marcado, z.boolean()).optional(),
+}).superRefine((e, ctx) => {
+  if (!e.complemento && !e.sem_complemento) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["complemento"], message: "Informe o complemento (apto, bloco) ou marque “É casa, sem complemento”." });
+  }
+}).transform(({ sem_complemento, ...e }) => ({ ...e, complemento: e.complemento || (sem_complemento ? "Casa" : "") }));
 export type EnderecoInput = z.infer<typeof enderecoSchema>;
 
 export const novoPedidoSchema = z.object({

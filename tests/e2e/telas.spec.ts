@@ -3,7 +3,7 @@ import { entrar, ADMIN, semErroNemOverflow } from "./helpers";
 
 const publicas = ["/", "/?cat=racao-aves", "/produto/alpiste-1kg", "/login", "/cadastro", "/recuperar", "/carrinho", "/offline"];
 const admin = ["/admin", "/admin/pedidos", "/admin/rotas", "/admin/produtos", "/admin/produtos?editar=novo", "/admin/relatorios",
-  "/admin/entregas", "/admin/cupons", "/admin/avaliacoes", "/admin/cupons?editar=novo", "/admin/usuarios", "/admin/notificacoes", "/admin/config", "/conta", "/conta/assinaturas", "/motorista"];
+  "/admin/entregas", "/admin/cupons", "/admin/avaliacoes", "/admin/etiquetas", "/admin/cupons?editar=novo", "/admin/usuarios", "/admin/notificacoes", "/admin/config", "/conta", "/conta/assinaturas", "/motorista"];
 
 test("páginas públicas abrem sem erro e sem rolagem lateral", async ({ page }) => {
   for (const u of publicas) { await page.goto(u); await semErroNemOverflow(page); }

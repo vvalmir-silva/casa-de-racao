@@ -58,6 +58,12 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
 
+## Endereço e etiquetas
+
+- **Complemento:** no checkout e em Minha conta o cliente informa apto/bloco ou marca "É casa, sem complemento" (grava "Casa"). Validação também no servidor.
+- **Etiquetas:** `/admin/etiquetas` (pedidos pagos do dia), `?rota=ID` (botão 🏷️ em cada rota) ou `?pedido=ID` (link em Pedidos). Folha A4 (2 por linha) ou térmica 10×15. Mostra nº do pedido grande, parada, cliente, complemento em destaque e quanto receber.
+- **Mesmo endereço:** pedidos com mesmo CEP + número na rota aparecem com aviso na tela do motorista, no painel de rotas e na etiqueta.
+
 ## Busca, favoritos e comprar de novo
 
 - **Busca:** ignora acento e maiúsculas, tolera erro de digitação (pg_trgm) e entende "cachorro" → cães, "pássaro" → aves etc. (`src/lib/busca.ts`). Sugestões aparecem enquanto digita (`/api/busca`).

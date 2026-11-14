@@ -21,7 +21,7 @@ export function AdminNav() {
   const path = usePathname();
   const on = (h: string) => (h === "/admin" ? path === "/admin" : path.startsWith(h));
   return (
-    <nav className="no-scrollbar sticky top-16 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-page px-4 py-2 md:static md:mx-0 md:block md:min-h-[calc(100vh-4rem)] md:border-b-0 md:border-r md:bg-white md:px-3 md:py-5">
+    <nav className="admin-nav no-scrollbar sticky top-16 z-20 -mx-4 flex gap-1.5 overflow-x-auto border-b border-line bg-page px-4 py-2 md:static md:mx-0 md:block md:min-h-[calc(100vh-4rem)] md:border-b-0 md:border-r md:bg-white md:px-3 md:py-5">
       <div className="mb-3 hidden px-3 text-[11px] font-bold tracking-wide text-ink-4 md:block">PAINEL DA LOJA</div>
       {itens.map(([href, label, ico]) => (
         <Link

@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CampoComplemento } from "@/components/CampoComplemento";
 import { useRouter } from "next/navigation";
 import { mascaraCep } from "@/lib/utils";
 import { useBuscaCep } from "@/hooks/useBuscaCep";
@@ -32,6 +33,7 @@ export function ExcluirEnderecoBotao({ id }: { id: string }) {
 
 export function EnderecoForm() {
   const vazio = { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", apelido: "Casa", referencia: "" };
+  const [semComp, setSemComp] = useState(false);
   const [aberto, setAberto] = useState(false);
   const [f, setF] = useState(vazio);
   const [erro, setErro] = useState("");
@@ -62,7 +64,8 @@ export function EnderecoForm() {
       </div>
       <div className="col-span-2"><label className="label" htmlFor="ce-rua">Rua</label><input id="ce-rua" ref={ruaRef} className="input" required {...campo("logradouro")} /></div>
       <div><label className="label" htmlFor="ce-numero">Número</label><input id="ce-numero" ref={numeroRef} className="input" required {...campo("numero")} /></div>
-      <div><label className="label" htmlFor="ce-complemento">Complemento</label><input id="ce-complemento" className="input" {...campo("complemento")} /></div>
+      <CampoComplemento id="ce-complemento" comNomes valor={f.complemento} semComplemento={semComp}
+        onValor={(v) => setF({ ...f, complemento: v })} onSem={(v) => { setSemComp(v); if (v) setF({ ...f, complemento: "" }); }} />
       <div><label className="label" htmlFor="ce-bairro">Bairro</label><input id="ce-bairro" className="input" required {...campo("bairro")} /></div>
       <div><label className="label" htmlFor="ce-cidade">Cidade</label><input id="ce-cidade" className="input" required {...campo("cidade")} /></div>
       <div><label className="label" htmlFor="ce-uf">UF</label><input id="ce-uf" className="input" maxLength={2} required {...campo("uf")} /></div>

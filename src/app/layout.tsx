@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Pwa />
           <Movimento />
           <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-40 pt-4 sm:pt-6 md:pb-12 lg:px-6">{children}</main>
-          <footer className="hidden border-t border-line py-8 md:block">
+          <footer className="no-print hidden border-t border-line py-8 md:block">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 text-sm text-ink-3">
               <span className="font-bold text-ink">Casa de Ração</span>
               <span>Ração para cães, gatos e aves · entrega em rotas pelo bairro</span>

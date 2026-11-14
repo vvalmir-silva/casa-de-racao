@@ -27,7 +27,10 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-4">
-      <h1 className="h1">Pedidos</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="h1">Pedidos</h1>
+        <a href="/admin/etiquetas" className="btn-outline">🏷️ Etiquetas de hoje</a>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         {filtros.map(([v, l]) => (
           <Link key={v} href={v ? `/admin/pedidos?status=${v}` : "/admin/pedidos"} className={`chip ${(status ?? "") === v ? "chip-on" : "chip"}`}>{l}</Link>
@@ -45,6 +48,7 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
                 <span className={`badge ${st.cor}`}>{st.label}</span>
                 <span className="text-ink-3">{dataHoraBR(p.criado_em)}</span>
                 <span className="ml-auto font-semibold">{brl(p.total_centavos)}</span>
+                {p.status !== "cancelado" && <a href={`/admin/etiquetas?pedido=${p.id}`} className="text-xs font-bold text-pine-700 underline">etiqueta</a>}
               </div>
               <div>{p.cliente} · <a className="font-semibold text-pine-700 underline" href={wa} target="_blank">{p.telefone}</a></div>
               <div className="text-ink-2">{p.itens}</div>

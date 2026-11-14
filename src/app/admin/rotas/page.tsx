@@ -5,6 +5,7 @@ import { brl, dataBR, mascaraCep, DIAS_SEMANA } from "@/lib/utils";
 import { FormAction, BotaoAction } from "@/components/FormAction";
 import { criarRota, atualizarRota, removerDaRota, excluirRota, otimizarRotaAction } from "../actions";
 import { diaSemanaDe } from "@/lib/frete";
+import { vizinhosDeEndereco, rotuloComplemento } from "@/lib/mesmo-endereco";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // geocodificação gratuita é 1 endereço/segundo
@@ -66,7 +67,7 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
                   <input type="checkbox" name="pedido_id" value={p.id} defaultChecked className="mt-1" />
                   <div className="flex-1">
                     <b>#{p.numero}</b> {p.cliente} · <span className="text-ink-3">{p.zona ?? "sem zona"}{p.inicio ? ` · ${p.inicio.slice(0, 5)}–${p.fim?.slice(0, 5)}` : " · expresso"}</span>
-                    <div className="text-xs text-ink-2">{p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)} · {Number(p.peso_total_kg)} kg · {brl(p.total_centavos)}</div>
+                    <div className="text-xs text-ink-2">{p.endereco.logradouro}, {p.endereco.numero} · <b>{rotuloComplemento(p.endereco)}</b> · {p.endereco.bairro} · {mascaraCep(p.endereco.cep)} · {Number(p.peso_total_kg)} kg · {brl(p.total_centavos)}</div>
                   </div>
                 </label>
               ))}
@@ -82,6 +83,7 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
 
       {rotas.map((r) => {
         const peds = pedRotas.filter((p) => p.rota_id === r.id);
+        const vizinhos = vizinhosDeEndereco(peds.filter((p) => p.status !== "entregue" && p.status !== "cancelado"));
         const pendentesRota = peds.filter((p) => p.status !== "entregue" && p.status !== "cancelado");
         const links = linksMaps(origem, pendentesRota.map((p) => `${p.endereco.logradouro}, ${p.endereco.numero}, ${p.endereco.bairro}, ${p.endereco.cidade}`));
         return (
@@ -99,6 +101,7 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
               </div>
               <div className="flex flex-wrap gap-2">
                 {r.status !== "concluida" && pendentesRota.length > 1 && <BotaoAction className="btn-outline" action={otimizarRotaAction} args={[r.id]}>Otimizar ordem</BotaoAction>}
+                <a href={`/admin/etiquetas?rota=${r.id}`} className="btn-outline">🏷️ Etiquetas</a>
                 {links.map((l, i) => <a key={l} href={l} target="_blank" className="btn-primary">{links.length > 1 ? `Maps · trecho ${i + 1}` : "Abrir no Maps"}</a>)}
                 {r.status === "planejada" && <BotaoAction className="btn-outline text-red-700" action={excluirRota} args={[r.id]} confirmar="Excluir rota? Os pedidos voltam para a lista.">Excluir</BotaoAction>}
               </div>
@@ -112,7 +115,8 @@ export default async function RotasAdmin({ searchParams }: { searchParams: Promi
               {peds.map((p) => (
                 <li key={p.id} className={`flex items-center gap-3 rounded-xl border p-3 ${p.status === "entregue" ? "border-pine-200 bg-pine-50" : "border-line"}`}>
                   <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${p.status === "entregue" ? "bg-pine-500 text-white" : "bg-pine-700 text-white"}`}>{p.status === "entregue" ? "✓" : p.ordem_rota}</span>
-                  <span className="min-w-0 flex-1"><b>#{p.numero}</b> {p.cliente}<span className="block text-ink-3">{p.endereco.logradouro}, {p.endereco.numero} · {p.endereco.bairro}</span>
+                  <span className="min-w-0 flex-1"><b>#{p.numero}</b> {p.cliente}<span className="block text-ink-3">{p.endereco.logradouro}, {p.endereco.numero} · <b className="text-ink-2">{rotuloComplemento(p.endereco)}</b> · {p.endereco.bairro}</span>
+                    {vizinhos.get(p.id) && <span className="mt-1 inline-block rounded-md bg-kibble-50 px-1.5 py-0.5 text-xs font-bold text-ink">⚠ mesmo endereço que {vizinhos.get(p.id)!.map((v) => `#${v.numero}`).join(", ")}</span>}
                     {p.recebido_por && <span className="block text-xs text-ink-3">Recebido por {p.recebido_por}</span>}
                   </span>
                   {p.comprovante_url && (
