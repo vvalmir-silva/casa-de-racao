@@ -15,8 +15,8 @@ export function voarParaCarrinho(origem: Element | null, imagem?: string | null)
   Object.assign(bola.style, {
     position: "fixed", zIndex: "80", pointerEvents: "none", width: `${tam}px`, height: `${tam}px`, borderRadius: "999px",
     left: `${a.left + a.width / 2 - tam / 2}px`, top: `${a.top + a.height / 2 - tam / 2}px`,
-    background: imagem ? `#fff url("${imagem}") center/cover` : "#1B4D3E",
-    boxShadow: "0 8px 20px -6px rgba(14,42,34,.5)", border: "2px solid #fff",
+    background: imagem ? `#fff url("${imagem}") center/cover` : "#0D4F68",
+    boxShadow: "0 8px 20px -6px rgba(6,43,58,.5)", border: "2px solid #fff",
   } as Partial<CSSStyleDeclaration>);
   document.body.appendChild(bola);
   const dx = b.left + b.width / 2 - (a.left + a.width / 2);

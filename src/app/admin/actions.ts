@@ -24,6 +24,7 @@ const produtoSchema = z.object({
   imagem_url: z.string().trim().url().optional().or(z.literal("")),
   duracao_dias: z.string().optional().transform((v) => (v && Number(v) > 0 ? Math.round(Number(v)) : null)),
   custo: z.string().optional().transform((v) => (v && v.trim() ? Math.round(Number(v.replace(/\./g, "").replace(",", ".")) * 100) : null)),
+  preco_de: z.string().optional().transform((v) => (v && v.trim() ? Math.round(Number(v.replace(/\./g, "").replace(",", ".")) * 100) : null)),
   ativo: z.coerce.boolean().optional(),
   destaque: z.coerce.boolean().optional(),
 });
@@ -50,14 +51,14 @@ export async function salvarProduto(fd: FormData): Promise<R> {
   if (p.id) {
     await sql`
       UPDATE produtos SET categoria_id=${p.categoria_id}, nome=${p.nome}, marca=${p.marca || null}, descricao=${p.descricao || null},
-        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${imagemUrl}, duracao_dias=${p.duracao_dias}, custo_centavos=${p.custo}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
+        peso_kg=${p.peso_kg}, preco_centavos=${p.preco}, imagem_url=${imagemUrl}, duracao_dias=${p.duracao_dias}, custo_centavos=${p.custo}, preco_de_centavos=${p.preco_de && p.preco_de > p.preco ? p.preco_de : null}, ativo=${!!p.ativo}, destaque=${!!p.destaque}
       WHERE id=${p.id}`;
   } else {
     const ex = await sql`SELECT 1 FROM produtos WHERE slug = ${slug}`;
     const s = ex.length ? `${slug}-${Date.now().toString(36)}` : slug;
     await sql`
-      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, duracao_dias, custo_centavos, ativo, destaque, estoque)
-      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${imagemUrl}, ${p.duracao_dias}, ${p.custo}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
+      INSERT INTO produtos (categoria_id, nome, slug, marca, descricao, peso_kg, preco_centavos, imagem_url, duracao_dias, custo_centavos, preco_de_centavos, ativo, destaque, estoque)
+      VALUES (${p.categoria_id}, ${p.nome}, ${s}, ${p.marca || null}, ${p.descricao || null}, ${p.peso_kg}, ${p.preco}, ${imagemUrl}, ${p.duracao_dias}, ${p.custo}, ${p.preco_de && p.preco_de > p.preco ? p.preco_de : null}, ${!!p.ativo}, ${!!p.destaque}, 0)`;
   }
   revalidatePath("/admin/produtos"); revalidatePath("/");
   return { ok: true };
@@ -260,7 +261,7 @@ export async function excluirJanela(id: number): Promise<R> {
 
 /* ---------- Configurações ---------- */
 const chavesPermitidas = new Set([
-  "avaliacao_auto_publicar",
+  "avaliacao_auto_publicar","parcelas_max","parcela_minima_centavos","loja_instagram","loja_horario","loja_cnpj",
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
   "recompra_dias_antes","whatsapp_notificacoes","pix_expiracao_minutos","loja_lat","loja_lng","comprovante_obrigatorio",

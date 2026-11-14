@@ -8,6 +8,7 @@ import { urlSite, jsonLd } from "@/lib/site";
 import { getSessao } from "@/lib/auth";
 import { jaComprados } from "@/lib/repetir";
 import { buscarProdutos } from "@/lib/busca";
+import { descontoPct } from "@/lib/ofertas";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,9 @@ const ilustracao: Record<string, string> = {
 };
 const curto = (n: string) => n.replace("Ração para ", "").replace(" e Higiene", "");
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string; ofertas?: string }> }) {
   const { cat, q } = await searchParams;
+  const soOfertas = (await searchParams).ofertas === "1";
   const categorias = (await sql`
     SELECT c.id, c.nome, c.slug, c.especie, count(p.id)::int AS qtd
     FROM categorias c LEFT JOIN produtos p ON p.categoria_id = c.id AND p.ativo
@@ -46,16 +48,19 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const produtos = q
     ? ((await buscarProdutos(q)).filter((p) => !cat || p.categoria_slug === cat) as Prod[])
     : ((await sql`
-    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
+    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
     FROM produtos p JOIN categorias c ON c.id = p.categoria_id
     WHERE p.ativo AND (${cat ?? null}::text IS NULL OR c.slug = ${cat ?? null})
+      AND (NOT ${soOfertas}::boolean OR p.preco_de_centavos > p.preco_centavos)
     ORDER BY p.destaque DESC, p.estoque = 0, p.nome
   `) as Prod[]);
-  const filtrando = !!(cat || q);
+  const filtrando = !!(cat || q || soOfertas);
+  const emOferta = produtos.filter((p) => descontoPct(p.preco_de_centavos, p.preco_centavos) > 0)
+    .sort((a, b) => descontoPct(b.preco_de_centavos, b.preco_centavos) - descontoPct(a.preco_de_centavos, a.preco_centavos));
   const sessao = filtrando ? null : await getSessao();
   const comprados = sessao ? await jaComprados(sessao.id) : [];
   const favoritos = sessao ? ((await sql`
-    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
+    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug
     FROM favoritos f JOIN produtos p ON p.id = f.produto_id JOIN categorias c ON c.id = p.categoria_id
     WHERE f.usuario_id = ${sessao.id} AND p.ativo ORDER BY f.criado_em DESC LIMIT 10
   `) as Prod[]) : [];
@@ -94,7 +99,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         <Categorias />
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{q ? `“${q}”` : atual?.nome}</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{q ? `“${q}”` : soOfertas ? "Ofertas" : atual?.nome}</h1>
             <p className="muted">{produtos.length} {produtos.length === 1 ? "produto" : "produtos"}</p>
           </div>
           <Link href="/" className="btn-ghost rounded-full">Limpar</Link>
@@ -119,11 +124,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     .map((c) => ({ c, itens: produtos.filter((p) => p.categoria_slug === c.slug) }))
     .filter((s) => s.itens.length >= 2);
 
-  const Carrossel = ({ titulo, href, itens }: { titulo: string; href?: string; itens: Prod[] }) => (
-    <section>
-      <div data-reveal className="mb-3 flex items-end justify-between">
-        <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{titulo}</h2>
-        {href && <Link href={href} className="inline-flex items-center gap-0.5 text-sm font-bold text-pine-700">Ver tudo <IconChevron width={16} height={16} /></Link>}
+  const Carrossel = ({ titulo, href, itens, destaque }: { titulo: string; href?: string; itens: Prod[]; destaque?: boolean }) => (
+    <section className={destaque ? "-mx-4 bg-gradient-to-b from-kibble-50 to-transparent px-4 pb-2 pt-5 sm:mx-0 sm:rounded-[28px] sm:px-5" : ""}>
+      <div data-reveal className="mb-3 flex items-end justify-between gap-3">
+        <h2 className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight sm:text-2xl">
+          <span aria-hidden className={`h-6 w-1.5 rounded-full ${destaque ? "bg-oferta" : "bg-kibble-500"}`} />
+          {titulo}
+        </h2>
+        {href && <Link href={href} className="inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1 text-sm font-bold text-pine-700 hover:bg-pine-50">Ver tudo <IconChevron width={16} height={16} /></Link>}
       </div>
       <div className="carrossel no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:px-0">
         {itens.slice(0, 10).map((p, i) => <ProdutoCard key={p.id} p={p} compacto i={i} />)}
@@ -149,13 +157,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   };
 
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(loja)} />
     <div className="space-y-8 sm:space-y-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(loja)} />
-      <Banners />
+      <Banners freteGratis={Number(cfg.frete_gratis_minimo_centavos ?? 15000)} temOfertas={emOferta.length > 0} />
       <Categorias />
       {comprados.length > 0 && <Carrossel titulo="Comprar de novo" href="/conta" itens={comprados as Prod[]} />}
       {favoritos.length > 0 && <Carrossel titulo="Seus favoritos" href="/conta/favoritos" itens={favoritos} />}
-      <Carrossel titulo="Mais pedidos no bairro" itens={produtos} />
+      {emOferta.length > 0 && <Carrossel titulo="Ofertas da semana" href="/?ofertas=1" itens={emOferta} destaque />}
+      <div id="mais-pedidos" className="scroll-mt-40"><Carrossel titulo="Mais pedidos no bairro" itens={produtos} /></div>
       {secoes.map(({ c, itens }) => <Carrossel key={c.id} titulo={c.nome} href={`/?cat=${c.slug}`} itens={itens} />)}
       {depoimentos.length > 0 && (
         <section aria-labelledby="depoimentos">
@@ -187,5 +197,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         ))}
       </section>
     </div>
+    </>
   );
 }

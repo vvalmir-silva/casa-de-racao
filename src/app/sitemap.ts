@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const categorias = (await sql`SELECT DISTINCT c.slug FROM categorias c JOIN produtos p ON p.categoria_id = c.id AND p.ativo`) as { slug: string }[];
     return [
       { url: base, changeFrequency: "daily", priority: 1 },
+      { url: `${base}/como-funciona`, changeFrequency: "monthly", priority: 0.5 },
       ...categorias.map((c) => ({ url: `${base}/?cat=${c.slug}`, changeFrequency: "weekly" as const, priority: 0.7 })),
       ...produtos.map((p) => ({ url: `${base}/produto/${p.slug}`, lastModified: p.atualizado_em ? new Date(p.atualizado_em) : undefined, changeFrequency: "weekly" as const, priority: 0.8 })),
     ];

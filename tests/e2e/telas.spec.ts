@@ -1,7 +1,7 @@
 import { test } from "@playwright/test";
 import { entrar, ADMIN, semErroNemOverflow } from "./helpers";
 
-const publicas = ["/", "/?cat=racao-aves", "/produto/alpiste-1kg", "/login", "/cadastro", "/recuperar", "/carrinho", "/offline"];
+const publicas = ["/", "/?ofertas=1", "/como-funciona", "/?cat=racao-aves", "/produto/alpiste-1kg", "/login", "/cadastro", "/recuperar", "/carrinho", "/offline"];
 const admin = ["/admin", "/admin/pedidos", "/admin/rotas", "/admin/produtos", "/admin/produtos?editar=novo", "/admin/relatorios",
   "/admin/entregas", "/admin/cupons", "/admin/avaliacoes", "/admin/etiquetas", "/admin/cupons?editar=novo", "/admin/usuarios", "/admin/notificacoes", "/admin/config", "/conta", "/conta/assinaturas", "/motorista"];
 

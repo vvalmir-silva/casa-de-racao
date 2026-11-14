@@ -8,8 +8,21 @@ import { IconPin, IconTruck } from "./Icons";
 type Resp = { atende: boolean; zona: { nome: string } | null; opcoes: { tipo: string; titulo: string; taxa_centavos: number }[] };
 
 /** Chip "Entregar em…" do topo. */
-export function LocalChip({ escuro }: { escuro?: boolean }) {
+export function LocalChip({ escuro, linha }: { escuro?: boolean; linha?: boolean }) {
   const { local, abrir } = useLocal();
+  if (linha) {
+    return (
+      <button onClick={abrir} className="flex min-h-[36px] w-full items-center gap-1.5 rounded-lg px-1 text-left text-[13px] text-ink-2 active:bg-page">
+        <IconPin width={16} height={16} className="shrink-0 text-pine-700" />
+        <span className="min-w-0 truncate">
+          {local
+            ? <>{local.atende ? "Entregar em " : "Fora da área: "}<b className="text-ink">{local.bairro || mascaraCep(local.cep)}</b>{local.atende ? ` · ${local.rotulo}` : ""}</>
+            : <>Informe seu <b className="text-ink">CEP</b> e veja o dia da entrega</>}
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" className="ml-auto shrink-0 opacity-60" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden><path d="m9 6 6 6-6 6" /></svg>
+      </button>
+    );
+  }
   return (
     <button
       onClick={abrir}

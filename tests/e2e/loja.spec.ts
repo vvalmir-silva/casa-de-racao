@@ -49,8 +49,8 @@ test("produto → carrinho → alterar quantidade", async ({ page }) => {
   await page.getByRole("link", { name: /Ver carrinho/ }).locator("visible=true").click();
   await expect(page).toHaveURL(/\/carrinho/);
   await page.getByRole("button", { name: "Pôr mais um" }).click();
-  await expect(page.getByText("R$ 359,80").first()).toBeVisible();
-  await expect(page.getByText("Frete grátis na rota do bairro")).toBeVisible();
+  await expect(page.getByText("R$ 359,80").locator("visible=true").first()).toBeVisible();
+  await expect(page.locator("main").getByText("Frete grátis na rota do bairro")).toBeVisible();
   await semErroNemOverflow(page);
 });
 

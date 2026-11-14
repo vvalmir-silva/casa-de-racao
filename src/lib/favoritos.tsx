@@ -4,8 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { usePathname, useRouter } from "next/navigation";
 import { alternarFavorito } from "@/app/favoritos-actions";
 
-type Ctx = { tem: (id: string) => boolean; alternar: (id: string) => void };
-const FavCtx = createContext<Ctx>({ tem: () => false, alternar: () => {} });
+type Ctx = { tem: (id: string) => boolean; alternar: (id: string) => void; total: number };
+const FavCtx = createContext<Ctx>({ tem: () => false, alternar: () => {}, total: 0 });
 
 export function FavoritosProvider({ ids, logado, children }: { ids: string[]; logado: boolean; children: ReactNode }) {
   const [set, setSet] = useState(() => new Set(ids));
@@ -30,7 +30,7 @@ export function FavoritosProvider({ ids, logado, children }: { ids: string[]; lo
     });
   }, [logado, path, router, set]);
 
-  const api = useMemo<Ctx>(() => ({ tem: (id) => set.has(id), alternar }), [set, alternar]);
+  const api = useMemo<Ctx>(() => ({ tem: (id) => set.has(id), alternar, total: set.size }), [set, alternar]);
   return <FavCtx.Provider value={api}>{children}</FavCtx.Provider>;
 }
 

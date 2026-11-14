@@ -19,7 +19,7 @@ export function termosBusca(q: string) {
 }
 
 export type ResultadoBusca = {
-  id: string; slug: string; nome: string; marca: string | null; peso_kg: number; preco_centavos: number; estoque: number; imagem_url: string | null;
+  id: string; slug: string; nome: string; marca: string | null; peso_kg: number; preco_centavos: number; preco_de_centavos: number | null; estoque: number; imagem_url: string | null;
   destaque: boolean; categoria_slug: string; categoria: string;
 };
 
@@ -40,20 +40,20 @@ export async function buscarProdutos(q: string, limite = 60): Promise<ResultadoB
 async function consultar(termos: string[], frase: string, limite: number, todas: boolean): Promise<ResultadoBusca[]> {
   if (termos[0] === "%") {
     return (await sql`
-      SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug, c.nome AS categoria
+      SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.destaque, c.slug AS categoria_slug, c.nome AS categoria
       FROM produtos p JOIN categorias c ON c.id = p.categoria_id WHERE p.ativo ORDER BY p.estoque = 0, p.destaque DESC, p.nome LIMIT ${limite}
     `) as ResultadoBusca[];
   }
   return (await sql`
     WITH base AS (
-      SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.destaque,
+      SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.destaque,
              c.slug AS categoria_slug, c.nome AS categoria,
              lower(unaccent(p.nome || ' ' || coalesce(p.marca, '') || ' ' || c.nome || ' ' || coalesce(p.descricao, ''))) AS doc,
              lower(unaccent(p.nome || ' ' || coalesce(p.marca, ''))) AS titulo
       FROM produtos p JOIN categorias c ON c.id = p.categoria_id
       WHERE p.ativo
     )
-    SELECT id, slug, nome, marca, peso_kg, preco_centavos, estoque, imagem_url, destaque, categoria_slug, categoria
+    SELECT id, slug, nome, marca, peso_kg, preco_centavos, preco_de_centavos, estoque, imagem_url, destaque, categoria_slug, categoria
     FROM base
     WHERE CASE WHEN ${todas}::boolean
       THEN (SELECT bool_and(doc LIKE '%' || w || '%' OR (length(w) >= 5 AND word_similarity(w, doc) >= 0.4)) FROM unnest(${termos}::text[]) AS w)

@@ -1,7 +1,8 @@
 import type React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { sql } from "@/lib/db";
+import { sql, getConfig } from "@/lib/db";
+import { parcelas, descontoPct } from "@/lib/ofertas";
 import { brl } from "@/lib/utils";
 import { AdicionarBotao } from "@/components/AdicionarBotao";
 import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
@@ -29,14 +30,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const rows = (await sql`
-    SELECT p.id, p.slug, p.nome, p.marca, p.descricao, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url, p.duracao_dias, p.categoria_id, c.nome AS categoria, c.slug AS cat_slug
+    SELECT p.id, p.slug, p.nome, p.marca, p.descricao, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.duracao_dias, p.categoria_id, c.nome AS categoria, c.slug AS cat_slug
     FROM produtos p JOIN categorias c ON c.id = p.categoria_id WHERE p.slug = ${slug} AND p.ativo
   `) as (ProdutoResumo & { descricao: string | null; categoria: string; cat_slug: string; duracao_dias: number | null; categoria_id: number })[];
   const p = rows[0];
   if (!p) notFound();
   const peso = Number(p.peso_kg);
+  const cfgLoja = await getConfig();
+  const pct = descontoPct(p.preco_de_centavos, p.preco_centavos);
+  const nParc = parcelas(p.preco_centavos, { parcelasMax: Number(cfgLoja.parcelas_max ?? 1) || 1, parcelaMin: Number(cfgLoja.parcela_minima_centavos ?? 3000) || 3000 });
   const parecidos = (await sql`
-    SELECT id, slug, nome, marca, peso_kg, preco_centavos, estoque, imagem_url FROM produtos
+    SELECT id, slug, nome, marca, peso_kg, preco_centavos, preco_de_centavos, estoque, imagem_url FROM produtos
     WHERE ativo AND categoria_id = ${p.categoria_id} AND id <> ${p.id} ORDER BY destaque DESC, nome LIMIT 5
   `) as ProdutoResumo[];
 
@@ -89,10 +93,17 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[36px]">{p.nome}</h1>
               <FavoritoBotao id={p.id} nome={p.nome} grande />
             </div>
-            <div className="mt-3 flex items-baseline gap-3">
-              <span className="text-[32px] font-extrabold tracking-tight">{brl(p.preco_centavos)}</span>
+            {pct > 0 && (
+              <div className="mt-3 flex items-center gap-2 text-[14px] text-ink-3">
+                <s>{brl(p.preco_de_centavos!)}</s>
+                <span className="rounded-md bg-oferta px-2 py-0.5 text-[12px] font-extrabold text-white">-{pct}%</span>
+              </div>
+            )}
+            <div className={`${pct > 0 ? "mt-1" : "mt-3"} flex items-baseline gap-3`}>
+              <span className={`text-[32px] font-extrabold tracking-tight ${pct > 0 ? "text-oferta" : ""}`}>{brl(p.preco_centavos)}</span>
               {peso >= 1 && <span className="rounded-full bg-white px-2.5 py-1 text-[13px] font-bold text-ink-3">{brl(Math.round(p.preco_centavos / peso))}/kg</span>}
             </div>
+            {nParc > 0 && <div className="mt-1 text-[14px] text-ink-2">ou <b>{nParc}x de {brl(Math.ceil(p.preco_centavos / nParc))}</b> sem juros no cartão, na entrega</div>}
           </div>
           <AdicionarBotao p={{ ...p, peso_kg: peso }} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -101,7 +112,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
             ))}
           </div>
           {p.descricao && <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{p.descricao}</p>}
-          <Link href="/conta/assinaturas" className="flex items-center gap-3 rounded-2xl bg-[#DCEBE3] p-4 text-pine-900 transition hover:bg-pine-100">
+          <Link href="/conta/assinaturas" className="flex items-center gap-3 rounded-2xl bg-pine-50 p-4 text-pine-900 transition hover:bg-pine-100">
             <span className="text-2xl">🔁</span>
             <span className="flex-1 text-sm"><b className="block text-[15px]">Assine e esqueça</b>A ração chega antes de acabar, no intervalo que você escolher.</span>
             <IconChevron width={18} height={18} />

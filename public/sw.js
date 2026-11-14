@@ -1,6 +1,6 @@
 // Service worker da Casa de Ração: app instalável + página offline.
 // Páginas e APIs vão sempre à rede (preço e estoque mudam); só arquivos estáticos ficam em cache.
-const VERSAO = "cr-v2";
+const VERSAO = "cr-v3";
 const OFFLINE = "/offline";
 const PRECACHE = [OFFLINE, "/icons/icon-192.png", "/produtos/racao-cao.svg", "/produtos/racao-gato.svg"];
 

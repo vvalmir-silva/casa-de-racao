@@ -4,7 +4,7 @@ import { ProdutoForm, EstoqueAjuste, CategoriaForm } from "./ProdutosClient";
 
 export const dynamic = "force-dynamic";
 
-export type Prod = { id: string; categoria_id: number; nome: string; marca: string | null; descricao: string | null; peso_kg: string; preco_centavos: number; estoque: number; imagem_url: string | null; duracao_dias: number | null; custo_centavos: number | null; ativo: boolean; destaque: boolean; categoria: string };
+export type Prod = { id: string; categoria_id: number; nome: string; marca: string | null; descricao: string | null; peso_kg: string; preco_centavos: number; preco_de_centavos: number | null; estoque: number; imagem_url: string | null; duracao_dias: number | null; custo_centavos: number | null; ativo: boolean; destaque: boolean; categoria: string };
 
 export default async function ProdutosAdmin({ searchParams }: { searchParams: Promise<{ baixo?: string; editar?: string }> }) {
   const { baixo, editar } = await searchParams;

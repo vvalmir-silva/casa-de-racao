@@ -9,7 +9,7 @@ export const metadata = { title: "Favoritos" };
 export default async function FavoritosPage() {
   const s = await exigirSessao();
   const produtos = (await sql`
-    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.estoque, p.imagem_url
+    SELECT p.id, p.slug, p.nome, p.marca, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url
     FROM favoritos f JOIN produtos p ON p.id = f.produto_id
     WHERE f.usuario_id = ${s.id} AND p.ativo
     ORDER BY p.estoque = 0, f.criado_em DESC

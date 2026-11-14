@@ -7,14 +7,14 @@ export const contentType = "image/png";
 export default function OgImage() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#1B4D3E", padding: 72, color: "white", fontFamily: "sans-serif" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#0D4F68", padding: 72, color: "white", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div style={{ width: 84, height: 84, borderRadius: 24, background: "#E8A33D", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, fontWeight: 800, color: "#1B4D3E" }}>CR</div>
+          <div style={{ width: 84, height: 84, borderRadius: 24, background: "#FF7A1A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, fontWeight: 800, color: "#0D4F68" }}>CR</div>
           <div style={{ fontSize: 44, fontWeight: 800 }}>Casa de Ração</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>Ração no seu bairro, com hora marcada.</div>
-          <div style={{ fontSize: 34, color: "#D3E6DD" }}>Cães · Gatos · Aves — PIX, cartão ou dinheiro na entrega</div>
+          <div style={{ fontSize: 34, color: "#CFE6EF" }}>Cães · Gatos · Aves — PIX, cartão ou dinheiro na entrega</div>
         </div>
         <div style={{ display: "flex", gap: 14 }}>
           {["Frete grátis acima de R$ 150", "Retirada grátis na loja"].map((t) => (

@@ -41,6 +41,13 @@ export default async function ConfigAdmin() {
         <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="whatsapp_notificacoes" defaultChecked={(c.whatsapp_notificacoes ?? "true") === "true"} /> Enviar notificações automáticas por WhatsApp</label>
         <div><label className="label">Lembrete de recompra (dias antes de acabar)</label><input name="recompra_dias_antes" className="input" defaultValue={c.recompra_dias_antes ?? "3"} /></div>
         <div><label className="label">Validade do PIX (minutos)</label><input name="pix_expiracao_minutos" className="input" defaultValue={c.pix_expiracao_minutos ?? "60"} /></div>
+        <h2 className="h2 col-span-full mt-3">Vitrine e rodapé</h2>
+        <div><label className="label">Parcelamento no cartão (máx. de parcelas)</label><input name="parcelas_max" className="input" inputMode="numeric" defaultValue={c.parcelas_max ?? "1"} /></div>
+        <div><label className="label">Parcela mínima (R$)</label><input name="parcela_minima_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "parcela_minima_centavos")} /></div>
+        <p className="col-span-full -mt-1 text-xs text-ink-3">Com 1 parcela o card não mostra parcelamento. Só ative se a maquininha da entrega parcela sem juros.</p>
+        <div><label className="label">Instagram (@usuario)</label><input name="loja_instagram" className="input" defaultValue={c.loja_instagram} placeholder="@casaderacao" /></div>
+        <div><label className="label">Horário de atendimento</label><input name="loja_horario" className="input" defaultValue={c.loja_horario} placeholder="Seg a sáb, 8h às 19h" /></div>
+        <div><label className="label">CNPJ (aparece no rodapé)</label><input name="loja_cnpj" className="input" defaultValue={c.loja_cnpj} /></div>
         <p className="col-span-full text-xs text-ink-3">Provedor de WhatsApp e token do Mercado Pago ficam nas variáveis de ambiente (ver README). Status em Admin → Notificações.</p>
         <div className="col-span-full"><button className="btn-primary">Salvar</button></div>
       </FormAction>

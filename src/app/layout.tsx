@@ -10,6 +10,9 @@ import { CarrinhoFlutuante } from "@/components/CarrinhoFlutuante";
 import { Suspense } from "react";
 import { FavoritosProvider } from "@/lib/favoritos";
 import { Movimento } from "@/components/Movimento";
+import { dadosVitrine } from "@/lib/vitrine";
+import { ConfigLojaProvider } from "@/lib/config-loja";
+import { Rodape } from "@/components/Rodape";
 import { sql } from "@/lib/db";
 import { urlSite } from "@/lib/site";
 import { Analytics } from "@vercel/analytics/next";
@@ -31,10 +34,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B4D3E" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0D4F68" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const sessao = await getSessao();
+  const { categorias, avisos, cfg } = await dadosVitrine().catch(() => ({ categorias: [], avisos: [] as string[], cfg: {} as Record<string, string> }));
+  const configLoja = { parcelasMax: Number(cfg.parcelas_max ?? 1) || 1, parcelaMin: Number(cfg.parcela_minima_centavos ?? 3000) || 3000 };
   const favoritos = sessao
     ? ((await sql`SELECT produto_id FROM favoritos WHERE usuario_id = ${sessao.id}`.catch(() => [])) as { produto_id: string }[]).map((f) => f.produto_id)
     : [];
@@ -48,18 +53,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CarrinhoProvider>
           <LocalProvider>
           <FavoritosProvider ids={favoritos} logado={!!sessao}>
-          <Suspense><Header sessao={sessao} /></Suspense>
+          <ConfigLojaProvider valor={configLoja}>
+          <Suspense><Header sessao={sessao} categorias={categorias} avisos={avisos} /></Suspense>
           <LocalSheet />
           <CarrinhoFlutuante />
           <Pwa />
           <Movimento />
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-40 pt-4 sm:pt-6 md:pb-12 lg:px-6">{children}</main>
-          <footer className="no-print hidden border-t border-line py-8 md:block">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-6 text-sm text-ink-3">
-              <span className="font-bold text-ink">Casa de Ração</span>
-              <span>Ração para cães, gatos e aves · entrega em rotas pelo bairro</span>
-            </div>
-          </footer>
+          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-10 pt-4 sm:pt-6 md:pb-12 lg:px-6">{children}</main>
+          <Rodape cfg={cfg} categorias={categorias} />
+          </ConfigLojaProvider>
           </FavoritosProvider>
           </LocalProvider>
         </CarrinhoProvider>

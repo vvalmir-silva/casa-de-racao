@@ -58,6 +58,14 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
 
+## Layout da loja
+
+- **Cores:** azul-petróleo (`pine`, cor principal) e tangerina (`kibble`, destaque), vermelho `oferta` para descontos. Tokens em `tailwind.config.ts`.
+- **Topo:** faixa de avisos rotativa (montada das Configurações: frete grátis, horário de corte), busca larga com sugestões, CEP, conta, favoritos e carrinho com total; menu de departamentos no desktop e gaveta lateral no celular.
+- **Banner principal:** carrossel com troca a cada 6s, setas, bolinhas, arrastar e botão de pausa; não troca sozinho com "reduzir movimento".
+- **Ofertas:** preencha "Preço de" no produto para aparecer riscado, com selo de % e na seção "Ofertas da semana" (`/?ofertas=1`). Parcelamento no card só aparece se "Parcelamento no cartão" > 1 em Configurações.
+- **Rodapé:** departamentos, atendimento (WhatsApp/horário), pagamentos, Instagram, CNPJ — tudo das Configurações. Página `/como-funciona` com zonas, horários e regras reais.
+
 ## Endereço e etiquetas
 
 - **Complemento:** no checkout e em Minha conta o cliente informa apto/bloco ou marca "É casa, sem complemento" (grava "Casa"). Validação também no servidor.
