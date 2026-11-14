@@ -9,6 +9,7 @@ import { LocalSheet } from "@/components/LocalSheet";
 import { CarrinhoFlutuante } from "@/components/CarrinhoFlutuante";
 import { Suspense } from "react";
 import { FavoritosProvider } from "@/lib/favoritos";
+import { Movimento } from "@/components/Movimento";
 import { sql } from "@/lib/db";
 import { urlSite } from "@/lib/site";
 import { Analytics } from "@vercel/analytics/next";
@@ -38,7 +39,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     ? ((await sql`SELECT produto_id FROM favoritos WHERE usuario_id = ${sessao.id}`.catch(() => [])) as { produto_id: string }[]).map((f) => f.produto_id)
     : [];
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* antes da pintura: habilita as entradas animadas (sem JS, nada fica escondido) */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('rv')" }} />
+      </head>
       <body className="flex min-h-screen flex-col">
         <CarrinhoProvider>
           <LocalProvider>
@@ -47,6 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <LocalSheet />
           <CarrinhoFlutuante />
           <Pwa />
+          <Movimento />
           <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-40 pt-4 sm:pt-6 md:pb-12 lg:px-6">{children}</main>
           <footer className="hidden border-t border-line py-8 md:block">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 text-sm text-ink-3">

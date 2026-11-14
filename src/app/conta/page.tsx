@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -44,8 +45,8 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
           <div className="card-flat text-center"><p className="font-bold">Nenhum pedido ainda</p><p className="muted">Seu primeiro pedido aparece aqui.</p><Link href="/" className="btn-primary mt-3">Ver produtos</Link></div>
         ) : (
           <div className="space-y-2">
-            {pedidos.map((p) => (
-              <Link key={p.id} href={`/conta/pedido/${p.id}`} className="card flex items-center justify-between gap-3 hover:border-pine-200">
+            {pedidos.map((p, i) => (
+              <Link key={p.id} data-reveal style={{ "--i": i } as React.CSSProperties} href={`/conta/pedido/${p.id}`} className="card flex transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[.99] items-center justify-between gap-3 hover:border-pine-200">
                 <div>
                   <div className="font-bold">Pedido #{p.numero}</div>
                   <div className="muted">{TIPO_ENTREGA[p.tipo_entrega]} · {dataBR(p.data_entrega)}</div>

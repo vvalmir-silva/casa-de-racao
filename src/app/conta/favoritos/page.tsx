@@ -21,7 +21,7 @@ export default async function FavoritosPage() {
           <h1 className="h1">Favoritos</h1>
           <p className="muted">{produtos.length ? `${produtos.length} ${produtos.length === 1 ? "produto" : "produtos"} salvos` : "Toque no coração de um produto para guardar aqui."}</p>
         </div>
-        <Link href="/conta" className="btn-ghost">Minha conta</Link>
+        <Link href="/conta" className="btn-ghost shrink-0 whitespace-nowrap">Minha conta</Link>
       </div>
       {produtos.length === 0 ? (
         <div className="rounded-[28px] bg-white px-6 py-14 text-center">
@@ -32,7 +32,7 @@ export default async function FavoritosPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-5">
-          {produtos.map((p) => <ProdutoCard key={p.id} p={p} />)}
+          {produtos.map((p, i) => <ProdutoCard key={p.id} p={p} i={i % 10} />)}
         </div>
       )}
     </div>

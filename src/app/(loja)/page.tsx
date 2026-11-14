@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import { sql, getConfig } from "@/lib/db";
 import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
@@ -77,8 +78,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         const on = cat === c.slug;
         return (
           <Link key={c.id} href={`/?cat=${c.slug}`} className="flex w-[84px] shrink-0 flex-col items-center gap-2 lg:w-[112px]">
-            <span className={`block aspect-square w-full overflow-hidden rounded-[22px] bg-white transition ${on ? "ring-4 ring-pine-700" : "hover:ring-4 hover:ring-pine-100"}`}>
-              {ilustracao[c.slug] ? <img src={ilustracao[c.slug]} alt="" className="h-full w-full scale-[1.35] object-cover" /> : <span className="grid h-full place-items-center text-3xl">🐾</span>}
+            <span className={`block aspect-square w-full overflow-hidden rounded-[22px] bg-white transition duration-200 ease-out active:scale-95 ${on ? "ring-4 ring-pine-700" : "hover:-translate-y-1 hover:ring-4 hover:ring-pine-100"}`}>
+              {ilustracao[c.slug] ? <img src={ilustracao[c.slug]} alt="" className={`h-full w-full object-cover transition-transform duration-300 ease-out ${on ? "scale-[1.5]" : "scale-[1.35]"}`} /> : <span className="grid h-full place-items-center text-3xl">🐾</span>}
             </span>
             <span className={`text-center text-[13px] font-bold leading-tight ${on ? "text-pine-700" : "text-ink-2"}`}>{curto(c.nome)}</span>
           </Link>
@@ -107,7 +108,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-5">
-            {produtos.map((p) => <ProdutoCard key={p.id} p={p} />)}
+            {produtos.map((p, i) => <ProdutoCard key={p.id} p={p} i={i % 10} />)}
           </div>
         )}
       </div>
@@ -120,12 +121,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   const Carrossel = ({ titulo, href, itens }: { titulo: string; href?: string; itens: Prod[] }) => (
     <section>
-      <div className="mb-3 flex items-end justify-between">
+      <div data-reveal className="mb-3 flex items-end justify-between">
         <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{titulo}</h2>
         {href && <Link href={href} className="inline-flex items-center gap-0.5 text-sm font-bold text-pine-700">Ver tudo <IconChevron width={16} height={16} /></Link>}
       </div>
-      <div className="no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:px-0">
-        {itens.slice(0, 10).map((p) => <ProdutoCard key={p.id} p={p} compacto />)}
+      <div className="carrossel no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:px-0">
+        {itens.slice(0, 10).map((p, i) => <ProdutoCard key={p.id} p={p} compacto i={i} />)}
       </div>
     </section>
   );
@@ -164,9 +165,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               <span className="text-sm font-bold text-ink-2"><span className="text-kibble-500">★</span> {String(notaGeral.media).replace(".", ",")} · {notaGeral.n} avaliações</span>
             )}
           </div>
-          <div className="no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0">
-            {depoimentos.map((d) => (
-              <figure key={d.id} className="w-[78%] shrink-0 rounded-[22px] bg-white p-5 sm:w-[46%] lg:w-auto">
+          <div className="carrossel no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0">
+            {depoimentos.map((d, i) => (
+              <figure key={d.id} data-reveal style={{ "--i": i } as React.CSSProperties} className="w-[78%] shrink-0 rounded-[22px] bg-white p-5 sm:w-[46%] lg:w-auto">
                 <div className="text-kibble-500" aria-label={`${d.nota} de 5 estrelas`}>{"★".repeat(d.nota)}</div>
                 <blockquote className="mt-2 text-[15px] leading-relaxed text-ink">“{d.comentario}”</blockquote>
                 <figcaption className="mt-3 text-sm font-bold text-ink-2">{d.nome}</figcaption>
@@ -181,8 +182,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           ["Entrega com hora marcada", "Janelas por bairro. Você sabe quando chega."],
           ["Pague como preferir", "PIX na hora ou dinheiro e cartão na entrega."],
           ["Retire sem custo", "Prefere buscar? Fica pronto em cerca de 1 hora."],
-        ].map(([t, d]) => (
-          <div key={t}><div className="font-extrabold">{t}</div><div className="muted">{d}</div></div>
+        ].map(([t, d], i) => (
+          <div key={t} data-reveal style={{ "--i": i } as React.CSSProperties}><div className="font-extrabold">{t}</div><div className="muted">{d}</div></div>
         ))}
       </section>
     </div>

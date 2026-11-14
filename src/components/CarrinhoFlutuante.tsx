@@ -14,7 +14,7 @@ export function CarrinhoFlutuante() {
   if (esconder) return null;
   const falta = 15000 - subtotal;
   return (
-    <Link href="/carrinho" className="fixed inset-x-3 bottom-[76px] z-30 flex animate-[subir_.25s_ease-out] items-center gap-3 rounded-2xl bg-pine-700 px-4 py-3 text-white shadow-pop md:hidden">
+    <Link href="/carrinho" className="barra-flutuante fixed inset-x-3 bottom-[76px] z-30 flex animate-[subir_300ms_cubic-bezier(.16,1,.3,1)] items-center gap-3 rounded-2xl bg-pine-700 px-4 py-3 text-white shadow-pop md:hidden">
       <span className="grid h-8 min-w-8 place-items-center rounded-full bg-white/15 px-2 text-sm font-extrabold">{quantidade}</span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block text-[15px] font-extrabold">Ver carrinho</span>

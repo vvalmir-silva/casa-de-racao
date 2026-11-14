@@ -23,7 +23,7 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-line/70 bg-white/85 backdrop-blur-xl backdrop-saturate-150">
+      <header className="topo sticky top-0 z-30 border-b border-line/70 bg-white/85 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4 lg:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Casa de Ração, início">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-pine-700 text-kibble-400 shadow-[inset_0_-2px_0_rgba(0,0,0,.15)]"><IconPaw width={22} height={22} /></span>
@@ -35,12 +35,12 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
             {sessao?.papel === "admin" && <Link href="/admin" className={`btn-ghost rounded-full ${on("/admin") ? "bg-pine-50 text-pine-700" : ""}`}><IconSettings width={18} height={18} /> Painel</Link>}
             {sessao?.papel === "motorista" && <Link href="/motorista" className={`btn-ghost rounded-full ${on("/motorista") ? "bg-pine-50 text-pine-700" : ""}`}><IconTruck width={18} height={18} /> Minha rota</Link>}
             <Link href={sessao ? "/conta" : "/login"} className="btn-ghost rounded-full"><IconUser width={18} height={18} /> {sessao ? nome : "Entrar"}</Link>
-            <Link href="/carrinho" className="btn-primary relative ml-1 rounded-full px-5">
+            <Link href="/carrinho" data-alvo-carrinho className="btn-primary relative ml-1 rounded-full px-5">
               <IconCart width={18} height={18} /> Carrinho
               {quantidade > 0 && <Badge n={quantidade} />}
             </Link>
           </nav>
-          <Link href="/carrinho" className="relative ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-full bg-page md:hidden" aria-label="Carrinho">
+          <Link href="/carrinho" data-alvo-carrinho className="relative ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-full bg-page md:hidden" aria-label="Carrinho">
             <IconCart width={20} height={20} />
             {quantidade > 0 && <Badge n={quantidade} />}
           </Link>
@@ -48,7 +48,7 @@ export function Header({ sessao }: { sessao: Sessao | null }) {
         {loja && mostraBusca && <div className="px-4 pb-3 md:hidden"><BuscaCampo /></div>}
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line/70 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Navegação">
+      <nav className="nav-inferior fixed inset-x-0 bottom-0 z-30 border-t border-line/70 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Navegação">
         <div className="grid h-[64px] grid-cols-4">
           <Tab href="/" label="Início" icon={<IconHome />} on={on("/")} />
           <Tab href="/carrinho" label="Carrinho" icon={<span className="relative"><IconCart />{quantidade > 0 && <Badge n={quantidade} small />}</span>} on={on("/carrinho") || on("/checkout")} />
@@ -76,5 +76,5 @@ function Tab({ href, label, icon, on }: { href: string; label: string; icon: Rea
 }
 
 function Badge({ n, small }: { n: number; small?: boolean }) {
-  return <span className={`absolute -right-1.5 -top-1.5 grid place-items-center rounded-full bg-kibble-500 px-1 font-extrabold text-ink ring-2 ring-white ${small ? "h-4 min-w-4 text-[10px]" : "h-5 min-w-5 text-[11px]"}`}>{n}</span>;
+  return <span key={n} className={`animate-[pop_200ms_cubic-bezier(.16,1,.3,1)] absolute -right-1.5 -top-1.5 grid place-items-center rounded-full bg-kibble-500 px-1 font-extrabold text-ink ring-2 ring-white ${small ? "h-4 min-w-4 text-[10px]" : "h-5 min-w-5 text-[11px]"}`}>{n}</span>;
 }

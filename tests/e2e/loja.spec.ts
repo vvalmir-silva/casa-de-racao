@@ -13,7 +13,7 @@ test("home lista produtos e filtra por categoria", async ({ page }) => {
 
 test("busca sem resultado mostra caminho de volta", async ({ page }) => {
   await page.goto("/?q=xyzinexistente");
-  await expect(page.getByText("Nada encontrado")).toBeVisible();
+  await expect(page.getByText("Nada encontrado").first()).toBeVisible();
   await page.getByRole("link", { name: "Ver todos os produtos" }).click();
   await expect(page.getByRole("article").first()).toBeVisible();
 });

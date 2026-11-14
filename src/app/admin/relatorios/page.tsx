@@ -86,7 +86,7 @@ export default async function RelatoriosAdmin({ searchParams }: { searchParams: 
         <h1 className="h1">Relatórios</h1>
         <div className="ml-auto flex flex-wrap items-center gap-1">
           {periodos.map(([v, l]) => <a key={v} href={`/admin/relatorios?p=${v}`} className={`chip ${p === v && !sp.de ? "chip-on" : "chip"}`}>{l}</a>)}
-          <form className="flex items-center gap-1"><input type="date" name="de" defaultValue={de} className="input w-36 py-1" /><input type="date" name="ate" defaultValue={ate} className="input w-36 py-1" /><button className="btn-outline py-1">OK</button></form>
+          <form className="grid w-full grid-cols-[1fr_1fr_auto] items-center gap-1 sm:flex sm:w-auto"><input type="date" name="de" aria-label="De" defaultValue={de} className="input min-w-0 py-1 sm:w-36" /><input type="date" name="ate" aria-label="Até" defaultValue={ate} className="input min-w-0 py-1 sm:w-36" /><button className="btn-outline px-3 py-1">Filtrar</button></form>
         </div>
       </div>
       <p className="muted">{dataBR(de)} a {dataBR(ate)} · pedidos cancelados excluídos</p>

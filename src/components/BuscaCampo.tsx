@@ -20,11 +20,13 @@ export function BuscaCampo({ className = "" }: { className?: string }) {
   const lista = useId();
   const caixa = useRef<HTMLFormElement>(null);
   const ultimo = useRef(0);
+  const [tocado, setTocado] = useState(false); // só busca sugestões depois que a pessoa mexe no campo
 
   useEffect(() => { setQ(inicial); }, [inicial]);
 
   useEffect(() => {
     const termo = q.trim();
+    if (!tocado) return;
     if (termo.length < 2) { setItens([]); setCarregando(false); return; }
     setCarregando(true);
     const id = ++ultimo.current;
@@ -40,7 +42,7 @@ export function BuscaCampo({ className = "" }: { className?: string }) {
       }
     }, 180);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, tocado]);
 
   useEffect(() => {
     const fora = (e: MouseEvent) => { if (caixa.current && !caixa.current.contains(e.target as Node)) setAberto(false); };
@@ -69,8 +71,8 @@ export function BuscaCampo({ className = "" }: { className?: string }) {
       <input
         name="q"
         value={q}
-        onChange={(e) => { setQ(e.target.value); setAberto(true); }}
-        onFocus={() => setAberto(true)}
+        onChange={(e) => { setQ(e.target.value); setTocado(true); setAberto(true); }}
+        onFocus={() => { setTocado(true); setAberto(true); }}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") { e.preventDefault(); setAberto(true); setAtivo((a) => Math.min(a + 1, itens.length - 1)); }
           else if (e.key === "ArrowUp") { e.preventDefault(); setAtivo((a) => Math.max(a - 1, -1)); }

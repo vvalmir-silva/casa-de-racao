@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql } from "@/lib/db";
@@ -73,7 +74,7 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
         <Link href={`/?cat=${p.cat_slug}`} className="hover:text-pine-700">{p.categoria}</Link>
       </nav>
       <div className="grid gap-6 md:grid-cols-2 md:gap-12">
-        <div className="overflow-hidden rounded-[32px] bg-white">
+        <div data-reveal="zoom" className="overflow-hidden rounded-[32px] bg-white">
           <div className="aspect-[5/4] sm:aspect-square">
             {p.imagem_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -95,8 +96,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
           </div>
           <AdicionarBotao p={{ ...p, peso_kg: peso }} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {fatos.map(([t, d]) => (
-              <div key={t} className="rounded-2xl bg-white p-3.5"><div className="text-[15px] font-extrabold">{t}</div><div className="text-[12px] text-ink-3">{d}</div></div>
+            {fatos.map(([t, d], i) => (
+              <div key={t} data-reveal style={{ "--i": i + 1 } as React.CSSProperties} className="rounded-2xl bg-white p-3.5"><div className="text-[15px] font-extrabold">{t}</div><div className="text-[12px] text-ink-3">{d}</div></div>
             ))}
           </div>
           {p.descricao && <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{p.descricao}</p>}
@@ -110,8 +111,8 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
       {parecidos.length > 0 && (
         <section>
           <h2 className="mb-3 text-xl font-extrabold tracking-tight sm:text-2xl">Também em {p.categoria.replace("Ração para ", "").toLowerCase()}</h2>
-          <div className="no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:px-0">
-            {parecidos.map((x) => <ProdutoCard key={x.id} p={x} compacto />)}
+          <div className="carrossel no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:px-0">
+            {parecidos.map((x, i) => <ProdutoCard key={x.id} p={x} compacto i={i} />)}
           </div>
         </section>
       )}

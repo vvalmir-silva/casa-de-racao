@@ -19,6 +19,9 @@ export default defineConfig({
   projects: [
     { name: "celular", use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "desktop", use: { viewport: { width: 1366, height: 900 } }, testMatch: /telas\.spec\.ts/ },
+    { name: "celular-pequeno", use: { ...devices["Pixel 7"], browserName: "chromium", viewport: { width: 360, height: 740 } }, testMatch: /telas\.spec\.ts/ },
+    { name: "tablet", use: { viewport: { width: 820, height: 1180 }, hasTouch: true }, testMatch: /telas\.spec\.ts/ },
+    { name: "sem-animacao", use: { ...devices["Pixel 7"], browserName: "chromium", reducedMotion: "reduce" }, testMatch: /telas\.spec\.ts/ },
   ],
   webServer: {
     command: `npx next start -p ${PORT}`,

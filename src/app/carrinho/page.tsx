@@ -33,11 +33,11 @@ export default function CarrinhoPage() {
             <span className="font-bold">{falta > 0 ? <>Faltam <span className="text-pine-700">{brl(falta)}</span> para frete grátis</> : "Frete grátis na rota do bairro 🎉"}</span>
             <span className="text-ink-3">R$ 150</span>
           </div>
-          <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-page"><div className="h-full rounded-full bg-gradient-to-r from-pine-500 to-pine-700 transition-[width] duration-500" style={{ width: `${pct}%` }} /></div>
+          <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-page"><div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-pine-500 to-pine-700 transition-transform duration-300 ease-out" style={{ transform: `scaleX(${pct / 100})` }} /></div>
         </div>
         <ul className="space-y-2">
-          {itens.map((i) => (
-            <li key={i.id} className="flex gap-3 rounded-[24px] bg-white p-3">
+          {itens.map((i, k) => (
+            <li key={i.id} className="flex gap-3 rounded-[24px] bg-white p-3 animate-[surgir_300ms_cubic-bezier(.16,1,.3,1)_both]" style={{ animationDelay: `${Math.min(k, 8) * 50}ms` }}>
               <Link href={`/produto/${i.slug}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-[18px] bg-page">
                 {i.imagem_url ? (
                   // eslint-disable-next-line @next/next/no-img-element

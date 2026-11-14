@@ -1,10 +1,13 @@
 "use client";
 
+import type React from "react";
+
 import Link from "next/link";
 import { useCarrinho } from "@/lib/carrinho";
 import { brl } from "@/lib/utils";
 import { IconMinus, IconPlus } from "./Icons";
 import { FavoritoBotao } from "./FavoritoBotao";
+import { voarParaCarrinho } from "@/lib/voar";
 
 export type ProdutoResumo = {
   id: string;
@@ -27,7 +30,7 @@ export function Contador({ p, grande }: { p: ProdutoResumo; grande?: boolean }) 
   if (!item)
     return (
       <button
-        onClick={(e) => { e.preventDefault(); adicionar({ ...p, peso_kg: Number(p.peso_kg) }); }}
+        onClick={(e) => { e.preventDefault(); voarParaCarrinho(e.currentTarget, p.imagem_url); adicionar({ ...p, peso_kg: Number(p.peso_kg) }); }}
         className={`grid ${h} ${grande ? "w-12" : "w-10"} place-items-center rounded-full bg-pine-700 text-white shadow-[0_6px_16px_-6px_rgba(27,77,62,.6)] transition hover:bg-pine-800 active:scale-90`}
         aria-label={`Adicionar ${p.nome}`}
       >
@@ -37,17 +40,17 @@ export function Contador({ p, grande }: { p: ProdutoResumo; grande?: boolean }) 
   return (
     <div className={`flex ${h} items-center rounded-full bg-pine-700 text-white shadow-[0_6px_16px_-6px_rgba(27,77,62,.6)] animate-[surgir_.18s_ease-out]`} onClick={(e) => e.preventDefault()}>
       <button className={`grid ${h} w-10 place-items-center rounded-full active:scale-90`} aria-label="Tirar um" onClick={() => (item.qtd <= 1 ? remover(p.id) : alterar(p.id, item.qtd - 1))}><IconMinus width={18} height={18} /></button>
-      <span className="min-w-[1.25rem] text-center text-[15px] font-extrabold" aria-live="polite">{item.qtd}</span>
-      <button className={`grid ${h} w-10 place-items-center rounded-full active:scale-90 disabled:opacity-40`} aria-label="Pôr mais um" disabled={item.qtd >= p.estoque} onClick={() => alterar(p.id, item.qtd + 1)}><IconPlus width={18} height={18} /></button>
+      <span className="min-w-[1.25rem] overflow-hidden text-center text-[15px] font-extrabold" aria-live="polite"><span key={item.qtd} className="inline-block animate-[tique_150ms_cubic-bezier(.16,1,.3,1)]">{item.qtd}</span></span>
+      <button className={`grid ${h} w-10 place-items-center rounded-full active:scale-90 disabled:opacity-40`} aria-label="Pôr mais um" disabled={item.qtd >= p.estoque} onClick={(e) => { voarParaCarrinho(e.currentTarget, p.imagem_url); alterar(p.id, item.qtd + 1); }}><IconPlus width={18} height={18} /></button>
     </div>
   );
 }
 
-export function ProdutoCard({ p, compacto }: { p: ProdutoResumo; compacto?: boolean }) {
+export function ProdutoCard({ p, compacto, i = 0 }: { p: ProdutoResumo; compacto?: boolean; i?: number }) {
   const sem = p.estoque <= 0;
   const peso = Number(p.peso_kg);
   return (
-    <article className={`group relative flex flex-col ${compacto ? "w-[160px] shrink-0 sm:w-[190px] lg:w-auto" : ""}`}>
+    <article data-reveal style={{ "--i": i } as React.CSSProperties} className={`card-produto group relative flex flex-col ${compacto ? "w-[160px] shrink-0 sm:w-[190px] lg:w-auto" : ""}`}>
       <Link href={`/produto/${p.slug}`} className="relative block overflow-hidden rounded-[22px] bg-white">
         <div className="aspect-square w-full transition duration-300 group-hover:scale-[1.03]">
           {p.imagem_url ? (
