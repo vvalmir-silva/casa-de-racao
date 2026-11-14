@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { exigirSessao } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notificarPedido } from "@/lib/whatsapp";
+import { after } from "next/server";
 
 export async function iniciarRota(id: string) {
   const s = await exigirSessao(["motorista", "admin"]);
@@ -50,6 +51,7 @@ export async function confirmarEntrega(fd: FormData): Promise<{ ok?: true; erro?
 
   await sql`UPDATE pedidos SET status = 'entregue', entregue_em = now(), comprovante_url = coalesce(${url}, comprovante_url), recebido_por = ${recebidoPor} WHERE id = ${pedidoId}`;
   await notificarPedido(pedidoId, "entregue").catch(() => {});
+  after(() => import("@/lib/indicacao").then((m) => m.premiarIndicacao(pedidoId)).catch((e) => console.error("premiarIndicacao", e)));
   revalidatePath("/motorista"); revalidatePath("/admin/rotas"); revalidatePath("/admin/pedidos");
   return { ok: true };
 }

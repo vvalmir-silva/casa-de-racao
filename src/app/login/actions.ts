@@ -36,6 +36,14 @@ export async function cadastroAction(_: EstadoForm, fd: FormData): Promise<Estad
     INSERT INTO usuarios (nome, telefone, email, senha_hash) VALUES (${nome}, ${telefone}, ${email || null}, ${hash})
     RETURNING id, nome, papel, telefone
   `) as { id: string; nome: string; papel: "cliente"; telefone: string }[];
+  const { cookies } = await import("next/headers");
+  const jar = await cookies();
+  const convite = String(fd.get("ind") ?? "") || jar.get("cr_ind")?.value;
+  if (convite) {
+    const { registrarIndicacao } = await import("@/lib/indicacao");
+    await registrarIndicacao(rows[0].id, convite).catch((e) => console.error("registrarIndicacao", e));
+    jar.delete("cr_ind");
+  }
   await criarSessao(rows[0]);
   redirect(next);
 }

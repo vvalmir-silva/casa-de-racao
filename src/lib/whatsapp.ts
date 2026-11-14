@@ -10,7 +10,7 @@ import { sql, getConfig } from "./db";
 
 export type TipoNotificacao =
   | "pedido_recebido" | "pagamento_confirmado" | "separado" | "em_rota" | "entregue" | "cancelado"
-  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste" | "codigo_acesso" | "carrinho_abandonado" | "lembrete_retirada" | "confirmacao_entrega";
+  | "novo_pedido_admin" | "recompra" | "assinatura_gerada" | "teste" | "codigo_acesso" | "carrinho_abandonado" | "lembrete_retirada" | "confirmacao_entrega" | "indicacao_premio";
 
 function numeroE164(telefone: string) {
   const d = telefone.replace(/\D/g, "");
@@ -102,7 +102,7 @@ function urlBase() {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
 }
 
-export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNotificacao, "novo_pedido_admin" | "recompra" | "teste" | "assinatura_gerada" | "carrinho_abandonado" | "codigo_acesso" | "lembrete_retirada" | "confirmacao_entrega">) {
+export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNotificacao, "novo_pedido_admin" | "recompra" | "teste" | "assinatura_gerada" | "carrinho_abandonado" | "codigo_acesso" | "lembrete_retirada" | "confirmacao_entrega" | "indicacao_premio">) {
   const p = await carregarPedido(pedidoId);
   if (!p) return;
   const cfg = await getConfig();

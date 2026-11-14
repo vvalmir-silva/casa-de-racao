@@ -48,6 +48,8 @@ export function Rodape({ cfg, categorias }: Props) {
         </Coluna>
         <Coluna titulo="Para você">
           <L href="/conta/favoritos">Favoritos</L>
+          <L href="/conta/pets">Meus pets</L>
+          <L href="/conta/indique">Indique e ganhe</L>
           <L href="/conta/assinaturas">Assinatura de ração</L>
           <L href="/login">Entrar ou cadastrar</L>
           <L href="/recuperar">Esqueci minha senha</L>

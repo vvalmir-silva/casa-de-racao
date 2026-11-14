@@ -3,6 +3,7 @@ import { sql } from "./db";
 export type Cupom = {
   id: number; codigo: string; descricao: string | null; tipo: "percentual" | "fixo" | "frete_gratis"; valor: number;
   minimo_centavos: number; primeira_compra: boolean; limite_usos: number | null; usos: number; valido_ate: string | null; ativo: boolean;
+  usuario_id?: string | null; origem?: string | null;
 };
 
 export type ResultadoCupom = { ok: true; cupom: Cupom; desconto_centavos: number; frete_gratis: boolean } | { ok: false; erro: string };
@@ -18,6 +19,7 @@ export async function validarCupom(codigo: string, clienteId: string | null, sub
   const rows = (await sql`SELECT *, valido_ate::text FROM cupons WHERE codigo = ${cod}`) as Cupom[];
   const c = rows[0];
   if (!c || !c.ativo) return { ok: false, erro: "Cupom inválido." };
+  if (c.usuario_id && c.usuario_id !== clienteId) return { ok: false, erro: clienteId ? "Este cupom é de outra conta." : "Faça login para usar este cupom." };
   if (c.valido_ate && c.valido_ate < new Date().toISOString().slice(0, 10)) return { ok: false, erro: "Cupom expirado." };
   if (c.limite_usos !== null && c.usos >= c.limite_usos) return { ok: false, erro: "Cupom esgotado." };
   if (subtotal < c.minimo_centavos) return { ok: false, erro: `Pedido mínimo de ${(c.minimo_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} para este cupom.` };

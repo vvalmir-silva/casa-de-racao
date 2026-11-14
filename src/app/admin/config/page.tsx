@@ -58,6 +58,13 @@ export default async function ConfigAdmin() {
         <div><label className="label" htmlFor="cf-troco-max">Troco máximo que o entregador leva (R$)</label><input id="cf-troco-max" name="troco_maximo_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "troco_maximo_centavos")} /></div>
         <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="confirmacao_automatica" defaultChecked={(c.confirmacao_automatica ?? "true") === "true"} /> Ao montar a rota, perguntar no WhatsApp se o cliente vai estar em casa</label>
 
+        <h2 id="cf-indicacao" className="h2 col-span-full mt-3 scroll-mt-24">Indique e ganhe</h2>
+        <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="indicacao_ativa" defaultChecked={(c.indicacao_ativa ?? "true") === "true"} /> Programa ativo (cada cliente tem um link em Minha conta → Indique e ganhe)</label>
+        <div><label className="label" htmlFor="cf-ind-desc">Desconto do amigo na 1ª compra (R$)</label><input id="cf-ind-desc" name="indicacao_desconto_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "indicacao_desconto_centavos")} /></div>
+        <div><label className="label" htmlFor="cf-ind-premio">Prêmio de quem indicou (R$)</label><input id="cf-ind-premio" name="indicacao_premio_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "indicacao_premio_centavos")} /></div>
+        <div><label className="label" htmlFor="cf-ind-min">Pedido mínimo para usar (R$)</label><input id="cf-ind-min" name="indicacao_minimo_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "indicacao_minimo_centavos")} /></div>
+        <p className="col-span-full -mt-1 text-xs text-ink-3">O prêmio sai quando o 1º pedido do amigo é entregue, uma vez por amigo. Entrega no mesmo endereço de quem indicou não conta.</p>
+
         <h2 className="h2 col-span-full mt-3">Vitrine e rodapé</h2>
         <div><label className="label">Parcelamento no cartão (máx. de parcelas)</label><input name="parcelas_max" className="input" inputMode="numeric" defaultValue={c.parcelas_max ?? "1"} /></div>
         <div><label className="label">Parcela mínima (R$)</label><input name="parcela_minima_centavos" className="input" inputMode="decimal" defaultValue={reais(c, "parcela_minima_centavos")} /></div>

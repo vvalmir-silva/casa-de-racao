@@ -24,16 +24,24 @@ export async function GET(req: NextRequest) {
   const alvos = (await sql`
     WITH ultimas AS (
       SELECT DISTINCT ON (p.cliente_id, i.produto_id)
-        p.cliente_id, i.produto_id, i.qtd, p.entregue_em, pr.nome, pr.slug, pr.duracao_dias, pr.estoque, u.nome AS cliente, u.telefone, u.aceita_lembretes
+        p.cliente_id, i.produto_id, i.qtd, p.entregue_em, pr.nome, pr.slug, pr.estoque, u.nome AS cliente, u.telefone, u.aceita_lembretes,
+        -- com pets cadastrados, a duração vem do consumo deles; senão, da duração padrão do produto
+        coalesce(pp.dias, pr.duracao_dias) AS duracao_dias, pp.nomes AS pets
       FROM pedidos p
       JOIN pedido_itens i ON i.pedido_id = p.id
       JOIN produtos pr ON pr.id = i.produto_id
+      JOIN categorias c ON c.id = pr.categoria_id
       JOIN usuarios u ON u.id = p.cliente_id
-      WHERE p.status = 'entregue' AND p.entregue_em IS NOT NULL AND pr.duracao_dias IS NOT NULL AND pr.ativo
+      LEFT JOIN LATERAL (
+        SELECT floor(pr.peso_kg * 1000 / nullif(sum(consumo_pet_g(pt.especie, pt.peso_kg, pt.fase, pt.castrado)), 0))::int AS dias,
+               string_agg(pt.nome, ' e ' ORDER BY pt.criado_em) FILTER (WHERE pt.peso_kg IS NOT NULL) AS nomes
+        FROM pets pt WHERE pt.usuario_id = p.cliente_id AND pt.especie = c.especie AND c.slug LIKE 'racao%' AND pr.peso_kg > 0
+      ) pp ON true
+      WHERE p.status = 'entregue' AND p.entregue_em IS NOT NULL AND pr.ativo
       ORDER BY p.cliente_id, i.produto_id, p.entregue_em DESC
     )
     SELECT * FROM ultimas ul
-    WHERE ul.aceita_lembretes
+    WHERE ul.duracao_dias IS NOT NULL AND ul.aceita_lembretes
       AND ul.estoque > 0
       AND (ul.entregue_em + make_interval(days => ul.duracao_dias * ul.qtd - ${antes}))::date <= (now() AT TIME ZONE 'America/Sao_Paulo')::date
       AND (ul.entregue_em + make_interval(days => ul.duracao_dias * ul.qtd + 7))::date >= (now() AT TIME ZONE 'America/Sao_Paulo')::date
@@ -45,13 +53,13 @@ export async function GET(req: NextRequest) {
         SELECT 1 FROM notificacoes n WHERE n.tipo = 'recompra' AND n.usuario_id = ul.cliente_id
           AND n.mensagem LIKE '%' || ul.nome || '%' AND n.criado_em > ul.entregue_em)
     LIMIT 200
-  `) as { cliente_id: string; produto_id: string; nome: string; slug: string; cliente: string; telefone: string }[];
+  `) as { cliente_id: string; produto_id: string; nome: string; slug: string; cliente: string; telefone: string; pets: string | null }[];
 
   let enviados = 0;
   for (const a of alvos) {
     const primeiro = a.cliente.split(" ")[0];
     const link = base ? `${base}/produto/${a.slug}` : "";
-    const texto = `Oi, ${primeiro}! Aqui é da ${loja} 🐾\nPelas nossas contas, a ${a.nome} deve estar acabando. Quer que a gente leve outra?\n${link}\n\nDica: ative a assinatura e nunca mais fique sem.`;
+    const texto = `Oi, ${primeiro}! Aqui é da ${loja} 🐾\nPelas nossas contas, a ${a.nome}${a.pets ? ` d${a.pets.includes(" e ") ? "e" : "o(a)"} ${a.pets}` : ""} deve estar acabando. Quer que a gente leve outra?\n${link}\n\nDica: ative a assinatura e nunca mais fique sem.`;
     const r = await enviarWhatsApp({ telefone: a.telefone, texto, tipo: "recompra", usuarioId: a.cliente_id });
     if (r.ok) enviados++;
   }

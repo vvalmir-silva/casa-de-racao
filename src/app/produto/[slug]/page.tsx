@@ -9,6 +9,9 @@ import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
 import { IconChevron } from "@/components/Icons";
 import { urlSite, jsonLd } from "@/lib/site";
 import { FavoritoBotao } from "@/components/FavoritoBotao";
+import { getSessao } from "@/lib/auth";
+import { petsDoUsuario } from "@/lib/pets-db";
+import { duracaoDias, pontuar, consumoDiarioG } from "@/lib/pets";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +33,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const rows = (await sql`
-    SELECT p.id, p.slug, p.nome, p.marca, p.descricao, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.duracao_dias, p.categoria_id, c.nome AS categoria, c.slug AS cat_slug
+    SELECT p.id, p.slug, p.nome, p.marca, p.descricao, p.peso_kg, p.preco_centavos, p.preco_de_centavos, p.estoque, p.imagem_url, p.duracao_dias, p.categoria_id, c.nome AS categoria, c.slug AS cat_slug, c.especie
     FROM produtos p JOIN categorias c ON c.id = p.categoria_id WHERE p.slug = ${slug} AND p.ativo
-  `) as (ProdutoResumo & { descricao: string | null; categoria: string; cat_slug: string; duracao_dias: number | null; categoria_id: number })[];
+  `) as (ProdutoResumo & { descricao: string | null; categoria: string; cat_slug: string; especie: string; duracao_dias: number | null; categoria_id: number })[];
   const p = rows[0];
   if (!p) notFound();
   const peso = Number(p.peso_kg);
@@ -44,9 +47,16 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
     WHERE ativo AND categoria_id = ${p.categoria_id} AND id <> ${p.id} ORDER BY destaque DESC, nome LIMIT 5
   `) as ProdutoResumo[];
 
+  const sessao = await getSessao();
+  const meusPets = sessao ? (await petsDoUsuario(sessao.id)).filter((x) => x.especie === p.especie) : [];
+  const ehRacao = p.cat_slug.startsWith("racao");
+  const comPeso = meusPets.filter((x) => consumoDiarioG(x));
+  const duraPets = ehRacao && peso > 0 && comPeso.length ? duracaoDias(peso, comPeso) : null;
+  const naoIndicado = ehRacao ? meusPets.filter((x) => pontuar({ ...p, peso_kg: peso, especie: p.especie, categoria_slug: p.cat_slug }, x) <= 0) : [];
+  const nomes = (l: { nome: string }[]) => l.map((x) => x.nome).join(" e ");
   const fatos = [
     p.estoque > 0 ? [`${p.estoque} em estoque`, "pronto para sair hoje"] : ["Esgotado", "volta em breve"],
-    p.duracao_dias ? [`~${p.duracao_dias} dias`, "para um pet de porte médio"] : null,
+    duraPets ? [`~${duraPets} dias`, `para ${nomes(comPeso)}`] : p.duracao_dias ? [`~${p.duracao_dias} dias`, "para um pet de porte médio"] : null,
     ["Entrega 18h–21h", "pedidos até 15h saem no mesmo dia"],
   ].filter(Boolean) as string[][];
 
@@ -111,6 +121,12 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
               <div key={t} data-reveal style={{ "--i": i + 1 } as React.CSSProperties} className="rounded-2xl bg-white p-3.5"><div className="text-[15px] font-extrabold">{t}</div><div className="text-[12px] text-ink-3">{d}</div></div>
             ))}
           </div>
+          {naoIndicado.length > 0 && (
+            <Link href="/conta/pets" className="block rounded-2xl bg-kibble-50 px-4 py-3 text-sm" data-testid="aviso-pet">⚠ Esta ração não é a mais indicada para <b>{nomes(naoIndicado)}</b>. Veja as indicadas ›</Link>
+          )}
+          {sessao && ehRacao && (p.especie === "cao" || p.especie === "gato") && comPeso.length === 0 && (
+            <Link href="/conta/pets" className="block text-sm font-semibold text-pine-700 underline">🐾 Cadastre seu pet e veja quantos dias este saco dura para ele</Link>
+          )}
           {p.descricao && <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{p.descricao}</p>}
           <Link href="/conta/assinaturas" className="flex items-center gap-3 rounded-2xl bg-pine-50 p-4 text-pine-900 transition hover:bg-pine-100">
             <span className="text-2xl">🔁</span>

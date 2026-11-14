@@ -196,6 +196,8 @@ function MenuGaveta({ aberto, onFechar, sessao, categorias }: { aberto: boolean;
           <p className="px-3 pb-1 pt-4 text-[11px] font-bold uppercase tracking-wide text-ink-4">Para você</p>
           {sessao && <Item href="/conta">Meus pedidos</Item>}
           <Item href="/conta/favoritos">Favoritos</Item>
+          {sessao && <Item href="/conta/pets">Meus pets</Item>}
+          {sessao && <Item href="/conta/indique">Indique e ganhe 🎁</Item>}
           <Item href="/conta/assinaturas">Assinatura</Item>
           <Item href="/como-funciona">Como funciona a entrega</Item>
           {sessao?.papel === "admin" && <Item href="/admin">Painel da loja</Item>}

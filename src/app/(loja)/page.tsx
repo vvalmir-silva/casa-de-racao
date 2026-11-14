@@ -11,6 +11,7 @@ import { buscarProdutos } from "@/lib/busca";
 import { descontoPct } from "@/lib/ofertas";
 import { after } from "next/server";
 import { expirarPendencias } from "@/lib/protecoes";
+import { petsDoUsuario, indicadosPorPet } from "@/lib/pets-db";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     FROM favoritos f JOIN produtos p ON p.id = f.produto_id JOIN categorias c ON c.id = p.categoria_id
     WHERE f.usuario_id = ${sessao.id} AND p.ativo ORDER BY f.criado_em DESC LIMIT 10
   `) as Prod[]) : [];
+  const pets = sessao ? await petsDoUsuario(sessao.id) : [];
+  const paraPets = await indicadosPorPet(pets, 10);
   const depoimentos = filtrando ? [] : ((await sql`
     SELECT a.id, split_part(u.nome, ' ', 1) AS nome, a.nota, a.comentario, a.resposta
     FROM avaliacoes a JOIN usuarios u ON u.id = a.cliente_id
@@ -166,6 +169,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       <Banners freteGratis={Number(cfg.frete_gratis_minimo_centavos ?? 15000)} temOfertas={emOferta.length > 0} />
       <Categorias />
       {comprados.length > 0 && <Carrossel titulo="Comprar de novo" href="/conta" itens={comprados as Prod[]} />}
+      {paraPets.map(({ pet, itens }) => <Carrossel key={pet.id} titulo={`Para ${pet.nome}`} href="/conta/pets" itens={itens as Prod[]} />)}
+      {sessao && pets.length === 0 && (
+        <Link href="/conta/pets" className="flex items-center gap-3 rounded-2xl bg-pine-50 p-4 text-pine-900 transition hover:bg-pine-100" data-reveal>
+          <span className="text-2xl" aria-hidden>🐾</span>
+          <span className="flex-1 text-sm"><b className="block text-[15px]">Cadastre seu pet</b>Indicamos a ração certa e avisamos antes de acabar.</span>
+          <IconChevron width={18} height={18} />
+        </Link>
+      )}
       {favoritos.length > 0 && <Carrossel titulo="Seus favoritos" href="/conta/favoritos" itens={favoritos} />}
       {emOferta.length > 0 && <Carrossel titulo="Ofertas da semana" href="/?ofertas=1" itens={emOferta} destaque />}
       <div id="mais-pedidos" className="scroll-mt-40"><Carrossel titulo="Mais pedidos no bairro" itens={produtos} /></div>

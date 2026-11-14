@@ -20,9 +20,9 @@ type Frete = { atende: boolean; zona: { nome: string } | null; opcoes: Opcao[] }
 
 const vazio = { apelido: "Casa", cep: "", logradouro: "", numero: "", complemento: "", sem_complemento: false, bairro: "", cidade: "", uf: "", referencia: "" };
 
-export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo, regraPagarDepois, prazoRetiradaHoras = 0, trocoMaximo = 0 }: {
+export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMinimo, regraPagarDepois, prazoRetiradaHoras = 0, trocoMaximo = 0, meusCupons = [] }: {
   enderecos: EnderecoSalvo[]; pixChave: string; lojaEndereco: string; freteGratisMinimo: number;
-  regraPagarDepois: { liberado: boolean; motivo?: string; valorMax: number }; prazoRetiradaHoras?: number; trocoMaximo?: number;
+  regraPagarDepois: { liberado: boolean; motivo?: string; valorMax: number }; prazoRetiradaHoras?: number; trocoMaximo?: number; meusCupons?: { codigo: string; descricao: string | null; valor: number; minimo_centavos: number; valido_ate: string | null }[];
 }) {
   const { itens, subtotal, peso, pronto, limpar } = useCarrinho();
   const router = useRouter();
@@ -92,14 +92,23 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
       ? `Pedidos acima de ${brl(regraPagarDepois.valorMax)} são pagos por PIX pelo app.`
       : null;
 
-  async function aplicarCupom() {
+  async function aplicarCupom(codigo = cupomInput) {
     setCupomErro("");
-    const r = await fetch(`/api/cupom?codigo=${encodeURIComponent(cupomInput)}&subtotal=${subtotal}&frete=${freteBase}`);
+    const r = await fetch(`/api/cupom?codigo=${encodeURIComponent(codigo)}&subtotal=${subtotal}&frete=${freteBase}`);
     const j = await r.json();
     if (!r.ok) { setCupom(null); return setCupomErro(j.erro ?? "Cupom inválido"); }
     setCupom(j);
   }
   const faltaGratis = freteGratisMinimo - subtotal;
+
+  // cupom pessoal (indicação) entra sozinho; se o cliente remover, não volta
+  const [cupomRemovido, setCupomRemovido] = useState(false);
+  const cupomAuto = meusCupons.find((c) => c.minimo_centavos <= subtotal);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!cupom && !cupomRemovido && cupomAuto && subtotal > 0) { setCupomInput(cupomAuto.codigo); aplicarCupom(cupomAuto.codigo); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cupomAuto?.codigo, subtotal, cupomRemovido]);
 
   // pagar depois bloqueado (1º pedido, valor alto ou faltas): volta para PIX
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -251,12 +260,23 @@ export function CheckoutForm({ enderecos, pixChave, lojaEndereco, freteGratisMin
           {cupom ? (
             <div className="flex items-center justify-between rounded-xl bg-pine-50 p-2.5 text-sm text-pine-800">
               <span>🎟️ {cupom.codigo}{cupom.descricao ? ` · ${cupom.descricao}` : ""}</span>
-              <button className="text-xs underline" onClick={() => { setCupom(null); setCupomInput(""); }}>remover</button>
+              <button className="text-xs underline" onClick={() => { setCupom(null); setCupomInput(""); setCupomRemovido(true); }}>remover</button>
             </div>
           ) : (
             <div className="flex gap-2">
               <input className="input py-1.5 uppercase" placeholder="Cupom" value={cupomInput} onChange={(e) => setCupomInput(e.target.value.toUpperCase())} />
-              <button className="btn-outline py-1.5" onClick={aplicarCupom} disabled={!cupomInput}>Aplicar</button>
+              <button className="btn-outline py-1.5" onClick={() => aplicarCupom()} disabled={!cupomInput}>Aplicar</button>
+            </div>
+          )}
+          {!cupom && meusCupons.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {meusCupons.map((c) => (
+                <button key={c.codigo} type="button" className="flex w-full items-center justify-between gap-2 rounded-xl border border-dashed border-kibble-500 px-2.5 py-2 text-left text-xs disabled:opacity-60"
+                  disabled={c.minimo_centavos > subtotal} onClick={() => { setCupomInput(c.codigo); aplicarCupom(c.codigo); }}>
+                  <span>🎁 <b>{brl(c.valor)}</b> {c.descricao ? `· ${c.descricao}` : ""}</span>
+                  <span className="font-bold text-pine-700">{c.minimo_centavos > subtotal ? `a partir de ${brl(c.minimo_centavos)}` : "Usar"}</span>
+                </button>
+              ))}
             </div>
           )}
           {cupomErro && <p className="mt-1 text-xs text-red-600">{cupomErro}</p>}

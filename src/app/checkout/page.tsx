@@ -4,6 +4,7 @@ import { sql, getConfig } from "@/lib/db";
 import { CheckoutForm, type EnderecoSalvo } from "./CheckoutForm";
 import { after } from "next/server";
 import { regraPagarDepois, expirarPendencias } from "@/lib/protecoes";
+import { cuponsDisponiveis } from "@/lib/indicacao";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,12 @@ export default async function CheckoutPage() {
   `) as EnderecoSalvo[];
   const cfg = await getConfig();
   const regra = await regraPagarDepois(s.id);
+  const meusCupons = await cuponsDisponiveis(s.id);
   after(() => expirarPendencias().catch(() => {}));
   return (
     <div>
       <h1 className="h1 mb-4">Fechar pedido</h1>
-      <CheckoutForm enderecos={enderecos} pixChave={cfg.pix_chave ?? ""} lojaEndereco={cfg.loja_endereco ?? ""} freteGratisMinimo={Number(cfg.frete_gratis_minimo_centavos ?? 0)} regraPagarDepois={regra} prazoRetiradaHoras={Number(cfg.retirada_prazo_cancelar_horas ?? 48) || 0} trocoMaximo={Number(cfg.troco_maximo_centavos ?? 10000) || 0} />
+      <CheckoutForm enderecos={enderecos} pixChave={cfg.pix_chave ?? ""} lojaEndereco={cfg.loja_endereco ?? ""} freteGratisMinimo={Number(cfg.frete_gratis_minimo_centavos ?? 0)} regraPagarDepois={regra} prazoRetiradaHoras={Number(cfg.retirada_prazo_cancelar_horas ?? 48) || 0} trocoMaximo={Number(cfg.troco_maximo_centavos ?? 10000) || 0} meusCupons={meusCupons} />
     </div>
   );
 }

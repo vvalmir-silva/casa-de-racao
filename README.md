@@ -79,6 +79,20 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 - **Limite de troco**: `troco_maximo_centavos` (padrão R$ 100). Checkout e servidor recusam troco acima disso. A rota mostra quanto de troco o motorista precisa levar.
 - **Acerto de caixa**: em Rotas, a loja confere dinheiro e cartão trazidos pelo motorista contra o esperado (pedidos entregues em dinheiro/cartão). Diferença exige observação e fica registrada (`acertos_caixa`). O motorista vê quanto deve prestar de contas.
 
+## Perfil do pet
+
+- Cliente cadastra os pets em **Minha conta → Meus pets** (espécie, idade, peso, castrado).
+- Consumo diário estimado (`src/lib/pets.ts` e função SQL `consumo_pet_g`, mesma fórmula): cão 130·kg^0,75 kcal, gato 100·kg^0,67 kcal, ração ≈ 3,6 kcal/g; filhote ×1,6, sênior ×0,85, castrado ×0,85.
+- Ração indicada por pet (espécie, idade, porte, castrado) na página de pets e no carrossel “Para {pet}” da home. No produto: quantos dias o saco dura para os pets e aviso quando a ração não é a indicada.
+- O lembrete de recompra usa o consumo dos pets do cliente (quando houver) no lugar da duração padrão do produto.
+
+## Indique e ganhe
+
+- Cada cliente tem um link `/i/{CODIGO}` em **Minha conta → Indique e ganhe**. O link guarda o código por 60 dias (cookie `cr_ind`) e abre o cadastro com o convite.
+- Na criação da conta, o amigo ganha um cupom pessoal `AMIGO…` (1ª compra, uso único, 60 dias) que entra sozinho no checkout.
+- Quando o 1º pedido do amigo é **entregue**, quem indicou ganha um cupom `PREMIO…` (90 dias) e recebe WhatsApp. Uma vez por amigo; entrega no mesmo endereço de quem indicou é recusada.
+- Cupons pessoais (`cupons.usuario_id`) só valem para o dono e ficam fora da lista do admin; o resumo e as indicações aparecem em Admin → Cupons. Valores em Configurações → Indique e ganhe.
+
 ## Layout da loja
 
 - **Cores:** azul-petróleo (`pine`, cor principal) e tangerina (`kibble`, destaque), vermelho `oferta` para descontos. Tokens em `tailwind.config.ts`.

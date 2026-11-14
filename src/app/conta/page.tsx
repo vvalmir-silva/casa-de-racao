@@ -31,6 +31,8 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="h1">Olá, {s.nome.split(" ")[0]}</h1>
         <div className="flex flex-wrap gap-2">
+          <Link href="/conta/pets" className="btn-outline">🐾 Meus pets</Link>
+          <Link href="/conta/indique" className="btn-outline">🎁 Indique e ganhe</Link>
           <Link href="/conta/favoritos" className="btn-outline">Favoritos{nFav ? ` (${nFav})` : ""}</Link>
           <Link href="/conta/assinaturas" className="btn-outline">Assinaturas</Link>
           <form action={logoutAction}><button className="btn-ghost">Sair</button></form>

@@ -8,7 +8,20 @@ export const dynamic = "force-dynamic";
 
 export default async function CuponsAdmin({ searchParams }: { searchParams: Promise<{ editar?: string }> }) {
   const { editar } = await searchParams;
-  const cupons = (await sql`SELECT *, valido_ate::text FROM cupons ORDER BY ativo DESC, criado_em DESC`) as Cupom[];
+  const cupons = (await sql`SELECT *, valido_ate::text FROM cupons WHERE usuario_id IS NULL ORDER BY ativo DESC, criado_em DESC`) as Cupom[];
+  const indic = (await sql`
+    SELECT split_part(a.nome, ' ', 1) || ' ' || coalesce(nullif(split_part(a.nome, ' ', 2), ''), '') AS indicado,
+      split_part(b.nome, ' ', 1) || ' ' || coalesce(nullif(split_part(b.nome, ' ', 2), ''), '') AS indicador,
+      i.status, i.motivo, i.cupom_premio, i.criado_em::text, p.numero
+    FROM indicacoes i JOIN usuarios a ON a.id = i.indicado_id JOIN usuarios b ON b.id = i.indicador_id LEFT JOIN pedidos p ON p.id = i.pedido_id
+    ORDER BY i.criado_em DESC LIMIT 30
+  `) as { indicado: string; indicador: string; status: string; motivo: string | null; cupom_premio: string | null; criado_em: string; numero: number | null }[];
+  const [resumo] = (await sql`
+    SELECT count(*) FILTER (WHERE origem = 'indicacao_amigo' AND usos > 0)::int AS amigos_usaram,
+           count(*) FILTER (WHERE origem = 'indicacao_premio')::int AS premios,
+           coalesce(sum(valor) FILTER (WHERE usos > 0), 0)::int AS desconto_dado
+    FROM cupons WHERE origem LIKE 'indicacao%'
+  `) as { amigos_usaram: number; premios: number; desconto_dado: number }[];
   const c = cupons.find((x) => String(x.id) === editar) ?? null;
   const tipoLabel = { percentual: "%", fixo: "R$", frete_gratis: "Frete grátis" };
   return (
@@ -54,6 +67,27 @@ export default async function CuponsAdmin({ searchParams }: { searchParams: Prom
           </tbody>
         </table>
       </div>
+
+      <section className="card space-y-3" data-testid="indicacoes">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="h2">Indique e ganhe</h2>
+          <a href="/admin/config#cf-indicacao" className="ml-auto text-sm font-semibold text-pine-700 underline">Valores e regras</a>
+        </div>
+        <p className="text-sm text-ink-2">{resumo.amigos_usaram} amigo(s) usaram o desconto · {resumo.premios} prêmio(s) para quem indicou · {brl(resumo.desconto_dado)} em descontos usados. Os cupons pessoais não aparecem na lista acima.</p>
+        {indic.length === 0 ? <p className="muted">Nenhuma indicação ainda.</p> : (
+          <table className="table table-cards"><thead><tr><th>Quem indicou</th><th>Amigo</th><th>Situação</th><th>Desde</th></tr></thead>
+            <tbody>{indic.map((x, i) => (
+              <tr key={i}>
+                <td className="font-semibold">{x.indicador}</td>
+                <td data-label="Amigo">{x.indicado}</td>
+                <td data-label="Situação">{x.status === "premiado" ? <span className="badge bg-pine-100 text-pine-800">premiado{x.numero ? ` · #${x.numero}` : ""}{x.cupom_premio ? ` · ${x.cupom_premio}` : ""}</span>
+                  : x.status === "recusado" ? <span className="badge bg-oferta-50 text-oferta" title={x.motivo ?? ""}>recusado: {x.motivo}</span>
+                  : <span className="badge bg-page text-ink-2">aguardando 1ª entrega</span>}</td>
+                <td data-label="Desde">{dataBR(x.criado_em.slice(0, 10))}</td>
+              </tr>
+            ))}</tbody></table>
+        )}
+      </section>
     </div>
   );
 }
