@@ -75,7 +75,7 @@ export default async function ContaPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="card flex items-center justify-between text-sm">
-        <div><b>Lembrete de recompra</b><div className="muted">Avisamos no WhatsApp quando a ração estiver acabando.</div></div>
+        <div><b>Lembretes no WhatsApp</b><div className="muted">Quando a ração estiver acabando ou se você esquecer itens no carrinho.</div></div>
         <LembretesToggle ativo={me?.aceita_lembretes ?? true} />
       </section>
     </div>

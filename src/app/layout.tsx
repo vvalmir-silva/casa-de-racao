@@ -39,7 +39,12 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const sessao = await getSessao();
   const { categorias, avisos, cfg } = await dadosVitrine().catch(() => ({ categorias: [], avisos: [] as string[], cfg: {} as Record<string, string> }));
-  const configLoja = { parcelasMax: Number(cfg.parcelas_max ?? 1) || 1, parcelaMin: Number(cfg.parcela_minima_centavos ?? 3000) || 3000 };
+  const configLoja = {
+    parcelasMax: Number(cfg.parcelas_max ?? 1) || 1,
+    parcelaMin: Number(cfg.parcela_minima_centavos ?? 3000) || 3000,
+    freteGratis: Number(cfg.frete_gratis_minimo_centavos ?? 15000) || 15000,
+    logado: !!sessao,
+  };
   const favoritos = sessao
     ? ((await sql`SELECT produto_id FROM favoritos WHERE usuario_id = ${sessao.id}`.catch(() => [])) as { produto_id: string }[]).map((f) => f.produto_id)
     : [];
@@ -50,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('rv')" }} />
       </head>
       <body className="flex min-h-screen flex-col">
-        <CarrinhoProvider>
+        <CarrinhoProvider logado={!!sessao}>
           <LocalProvider>
           <FavoritosProvider ids={favoritos} logado={!!sessao}>
           <ConfigLojaProvider valor={configLoja}>

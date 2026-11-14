@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { ImportarPlanilha } from "./ImportarPlanilha";
 import { brl } from "@/lib/utils";
 import { ProdutoForm, EstoqueAjuste, CategoriaForm } from "./ProdutosClient";
 
@@ -18,8 +19,9 @@ export default async function ProdutosAdmin({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="h1">Produtos</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="h1 mr-auto">Produtos</h1>
+        <ImportarPlanilha />
         <a href="/admin/produtos?editar=novo" className="btn-primary">+ Produto</a>
       </div>
       {(editar === "novo" || emEdicao) && <ProdutoForm produto={emEdicao} categorias={categorias} />}

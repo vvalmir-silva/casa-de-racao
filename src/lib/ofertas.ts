@@ -1,5 +1,5 @@
 /** Regras de exibição de oferta e parcelamento (puras: servem no servidor e no navegador). */
-export type ConfigParcelas = { parcelasMax: number; parcelaMin: number };
+export type ConfigParcelas = { parcelasMax: number; parcelaMin: number; freteGratis?: number };
 
 /** Quantas parcelas sem juros mostrar para um preço (0 = não mostra). */
 export function parcelas(preco: number, c: ConfigParcelas) {

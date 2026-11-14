@@ -58,6 +58,12 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
 
+## Vender mais
+
+- **Complete o frete grátis:** no carrinho, quando falta pouco para o frete grátis, aparecem produtos com preço perto do que falta (`/api/complemento`).
+- **Carrinho salvo e lembrete:** para cliente logado, o carrinho é guardado no servidor (tabela `carrinhos`) e volta em outro aparelho. O cron diário de recompra (10h BRT) também manda WhatsApp para quem deixou itens há mais de `carrinho_lembrete_horas` (padrão 20h, até 7 dias), uma vez por carrinho, respeitando “Lembretes no WhatsApp” em Minha conta.
+- **Planilha de produtos:** Admin → Produtos → “Importar planilha”. Baixe o modelo (já com os produtos atuais), edite no Excel/Google Planilhas e envie .xlsx ou .csv. Prévia com novos/atualizar/erros antes de gravar; estoque ajustado entra no histórico de movimentos.
+
 ## Layout da loja
 
 - **Cores:** azul-petróleo (`pine`, cor principal) e tangerina (`kibble`, destaque), vermelho `oferta` para descontos. Tokens em `tailwind.config.ts`.

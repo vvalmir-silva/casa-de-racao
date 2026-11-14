@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCarrinho } from "@/lib/carrinho";
+import { useConfigLoja } from "@/lib/config-loja";
 import { brl } from "@/lib/utils";
 import { IconChevron } from "./Icons";
 
 /** Barra "Ver carrinho" que aparece no celular quando há itens. */
 export function CarrinhoFlutuante() {
   const { quantidade, subtotal, pronto } = useCarrinho();
+  const gratis = useConfigLoja().freteGratis;
   const path = usePathname();
   const esconder = !pronto || quantidade === 0 || path.startsWith("/carrinho") || path.startsWith("/checkout") || path.startsWith("/admin") || path.startsWith("/motorista") || path.startsWith("/produto");
   if (esconder) return null;
-  const falta = 15000 - subtotal;
+  const falta = gratis - subtotal;
   return (
     <Link href="/carrinho" className="barra-flutuante fixed inset-x-3 bottom-[76px] z-30 flex animate-[subir_300ms_cubic-bezier(.16,1,.3,1)] items-center gap-3 rounded-2xl bg-pine-700 px-4 py-3 text-white shadow-pop md:hidden">
       <span className="grid h-8 min-w-8 place-items-center rounded-full bg-white/15 px-2 text-sm font-extrabold">{quantidade}</span>

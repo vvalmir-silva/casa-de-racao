@@ -55,5 +55,41 @@ export async function GET(req: NextRequest) {
     const r = await enviarWhatsApp({ telefone: a.telefone, texto, tipo: "recompra", usuarioId: a.cliente_id });
     if (r.ok) enviados++;
   }
-  return NextResponse.json({ candidatos: alvos.length, enviados });
+  const carrinho = await lembrarCarrinhos(base, loja, cfgInt(cfg, "carrinho_lembrete_horas", 20));
+  return NextResponse.json({ candidatos: alvos.length, enviados, carrinho });
+}
+
+/**
+ * Carrinho abandonado: cliente logado deixou itens há mais de `horas` (e menos de 7 dias), não comprou depois
+ * e aceita lembretes. Um lembrete por versão do carrinho (mexeu no carrinho, pode lembrar de novo).
+ */
+async function lembrarCarrinhos(base: string, loja: string, horas: number) {
+  const alvos = (await sql`
+    SELECT c.usuario_id, u.nome, u.telefone,
+      count(*)::int AS n, sum(LEAST((i->>'qtd')::int, p.estoque) * p.preco_centavos)::int AS total,
+      (array_agg(p.nome ORDER BY p.preco_centavos DESC))[1] AS principal
+    FROM carrinhos c
+    JOIN usuarios u ON u.id = c.usuario_id
+    CROSS JOIN LATERAL jsonb_array_elements(c.itens) i
+    JOIN produtos p ON p.id = (i->>'id')::uuid AND p.ativo AND p.estoque > 0
+    WHERE u.ativo AND u.aceita_lembretes
+      AND c.atualizado_em < now() - make_interval(hours => ${horas})
+      AND c.atualizado_em > now() - interval '7 days'
+      AND (c.lembrado_em IS NULL OR c.lembrado_em < c.atualizado_em)
+      AND NOT EXISTS (SELECT 1 FROM pedidos pe WHERE pe.cliente_id = c.usuario_id AND pe.criado_em > c.atualizado_em)
+    GROUP BY c.usuario_id, u.nome, u.telefone
+    LIMIT 200
+  `) as { usuario_id: string; nome: string; telefone: string; n: number; total: number; principal: string }[];
+  const brl = (v: number) => (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  let enviados = 0;
+  for (const a of alvos) {
+    const link = base ? `${base}/carrinho` : "";
+    const itens = a.n === 1 ? a.principal : `${a.principal} e mais ${a.n - 1} ${a.n - 1 === 1 ? "item" : "itens"}`;
+    const texto = `Oi, ${a.nome.split(" ")[0]}! Aqui é da ${loja} 🐾\nVocê deixou ${itens} no carrinho (${brl(a.total)}). Ainda dá tempo de receber no próximo horário:\n${link}`;
+    const r = await enviarWhatsApp({ telefone: a.telefone, texto, tipo: "carrinho_abandonado", usuarioId: a.usuario_id });
+    // marca mesmo se o WhatsApp estiver desligado, para não repetir o mesmo carrinho
+    await sql`UPDATE carrinhos SET lembrado_em = now() WHERE usuario_id = ${a.usuario_id}`;
+    if (r.ok) enviados++;
+  }
+  return { candidatos: alvos.length, enviados };
 }

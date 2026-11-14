@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useCarrinho } from "@/lib/carrinho";
 import { brl } from "@/lib/utils";
 import { IconMinus, IconPlus } from "@/components/Icons";
-
-const GRATIS = 15000;
+import { CompleteFrete } from "@/components/CompleteFrete";
+import { useConfigLoja } from "@/lib/config-loja";
 
 export default function CarrinhoPage() {
   const { itens, alterar, remover, subtotal, peso, pronto, quantidade } = useCarrinho();
+  const GRATIS = useConfigLoja().freteGratis;
   if (!pronto) return null;
   if (itens.length === 0)
     return (
@@ -31,7 +32,7 @@ export default function CarrinhoPage() {
         <div className="rounded-[24px] bg-white p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="font-bold">{falta > 0 ? <>Faltam <span className="text-pine-700">{brl(falta)}</span> para frete grátis</> : "Frete grátis na rota do bairro 🎉"}</span>
-            <span className="text-ink-3">R$ 150</span>
+            <span className="text-ink-3">{brl(GRATIS).replace(",00", "")}</span>
           </div>
           <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-page"><div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-pine-500 to-pine-700 transition-transform duration-300 ease-out" style={{ transform: `scaleX(${pct / 100})` }} /></div>
         </div>
@@ -62,6 +63,7 @@ export default function CarrinhoPage() {
             </li>
           ))}
         </ul>
+        <CompleteFrete falta={falta} idsNoCarrinho={itens.map((i) => i.id)} />
         <Link href="/" className="btn-ghost">+ Adicionar mais itens</Link>
       </div>
       <aside className="h-fit space-y-4 rounded-[24px] bg-white p-5 lg:sticky lg:top-24">

@@ -1,6 +1,7 @@
 "use server";
 
 import { getSessao } from "@/lib/auth";
+import { sql } from "@/lib/db";
 import { criarPedido, novoPedidoSchema, ErroPedido } from "@/lib/pedidos";
 import { notificarPedido, notificarAdminNovoPedido } from "@/lib/whatsapp";
 
@@ -11,6 +12,7 @@ export async function finalizarPedidoAction(payload: unknown): Promise<{ ok: tru
   if (!parsed.success) return { ok: false, erro: parsed.error.issues[0].message };
   try {
     const r = await criarPedido(s.id, parsed.data);
+    await sql`DELETE FROM carrinhos WHERE usuario_id = ${s.id}`.catch(() => {});
     await Promise.allSettled([notificarPedido(r.id, "pedido_recebido"), notificarAdminNovoPedido(r.id)]);
     return { ok: true, ...r };
   } catch (e) {
