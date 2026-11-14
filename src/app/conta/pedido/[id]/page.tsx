@@ -5,6 +5,8 @@ import { brl, dataBR, STATUS_PEDIDO, TIPO_ENTREGA, FORMA_PAGAMENTO, mascaraCep }
 import { CancelarPedidoBotao } from "../../ContaClient";
 import { hm } from "@/lib/frete";
 import { PixBox } from "@/components/PixBox";
+import { AvaliacaoForm } from "@/components/AvaliacaoForm";
+import { avaliarPedido } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,8 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
   const itens = (await sql`SELECT nome, qtd, preco_centavos FROM pedido_itens WHERE pedido_id = ${id}`) as { nome: string; qtd: number; preco_centavos: number }[];
   const cfg = await getConfig();
   const st = STATUS_PEDIDO[p.status];
+  const [aval] = (await sql`SELECT nota, comentario, resposta FROM avaliacoes WHERE pedido_id = ${id}`) as { nota: number; comentario: string | null; resposta: string | null }[];
+  const podeAvaliar = p.status === "entregue" && !aval && s.papel !== "admin";
   const wa = cfg.loja_whatsapp ? `https://wa.me/${cfg.loja_whatsapp}?text=${encodeURIComponent(`Olá! Segue o comprovante do PIX do pedido #${p.numero}.`)}` : null;
 
   return (
@@ -51,6 +55,16 @@ export default async function PedidoPage({ params, searchParams }: { params: Pro
               <img src={p.comprovante_url} alt="Foto da entrega" className="max-h-72 w-full rounded-xl object-cover" />
             </a>
           )}
+        </div>
+      )}
+
+      {podeAvaliar && <div id="avaliar"><AvaliacaoForm pedidoId={p.id} action={avaliarPedido} /></div>}
+      {aval && (
+        <div className="card space-y-1">
+          <div className="h2">Sua avaliação</div>
+          <div className="text-xl text-kibble-500" aria-label={`${aval.nota} de 5 estrelas`}>{"★".repeat(aval.nota)}<span className="text-line-2">{"★".repeat(5 - aval.nota)}</span></div>
+          {aval.comentario && <p className="text-sm text-ink-2">“{aval.comentario}”</p>}
+          {aval.resposta && <p className="rounded-xl bg-pine-50 p-3 text-sm text-pine-800"><b>Resposta da loja:</b> {aval.resposta}</p>}
         </div>
       )}
 

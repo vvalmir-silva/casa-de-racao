@@ -8,14 +8,25 @@ import { LocalProvider } from "@/lib/local";
 import { LocalSheet } from "@/components/LocalSheet";
 import { CarrinhoFlutuante } from "@/components/CarrinhoFlutuante";
 import { Suspense } from "react";
+import { urlSite } from "@/lib/site";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(urlSite()),
   title: { default: "Casa de Ração — entrega no seu bairro", template: "%s · Casa de Ração" },
   description: "Ração para cães, gatos e aves com entrega no dia certo, no seu bairro.",
   applicationName: "Casa de Ração",
   appleWebApp: { capable: true, title: "Casa de Ração", statusBarStyle: "default" },
   icons: { apple: "/icons/apple-touch-icon.png" },
   formatDetection: { telephone: false },
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website", locale: "pt_BR", siteName: "Casa de Ração",
+    title: "Casa de Ração — entrega no seu bairro",
+    description: "Ração para cães, gatos e aves com entrega no dia certo, no seu bairro. PIX, cartão ou dinheiro.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B4D3E" };
 
@@ -39,6 +50,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </footer>
           </LocalProvider>
         </CarrinhoProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

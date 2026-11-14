@@ -37,6 +37,7 @@ export default async function ConfigAdmin() {
         <div><label className="label">Peso máximo (kg)</label><input name="expresso_peso_max_kg" className="input" defaultValue={c.expresso_peso_max_kg} /></div>
         <div><label className="label">Prazo (horas)</label><input name="expresso_prazo_horas" className="input" defaultValue={c.expresso_prazo_horas} /></div>
         <h2 className="h2 col-span-full mt-3">WhatsApp e PIX</h2>
+        <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="avaliacao_auto_publicar" defaultChecked={(c.avaliacao_auto_publicar ?? "true") === "true"} /> Publicar na página inicial as avaliações 4 e 5 estrelas com comentário, sem aprovação</label>
         <label className="col-span-full flex items-center gap-2 text-sm"><input type="checkbox" name="whatsapp_notificacoes" defaultChecked={(c.whatsapp_notificacoes ?? "true") === "true"} /> Enviar notificações automáticas por WhatsApp</label>
         <div><label className="label">Lembrete de recompra (dias antes de acabar)</label><input name="recompra_dias_antes" className="input" defaultValue={c.recompra_dias_antes ?? "3"} /></div>
         <div><label className="label">Validade do PIX (minutos)</label><input name="pix_expiracao_minutos" className="input" defaultValue={c.pix_expiracao_minutos ?? "60"} /></div>

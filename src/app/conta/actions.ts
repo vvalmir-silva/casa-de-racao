@@ -69,3 +69,25 @@ export async function alternarLembretes(ativo: boolean) {
   await sql`UPDATE usuarios SET aceita_lembretes = ${ativo} WHERE id = ${s.id}`;
   revalidatePath("/conta");
 }
+
+/** Cliente avalia um pedido entregue (uma vez). Notas 4–5 com comentário podem ir direto à vitrine. */
+export async function avaliarPedido(fd: FormData): Promise<{ ok?: true; erro?: string }> {
+  const s = await exigirSessao();
+  const pedidoId = String(fd.get("pedido_id") ?? "");
+  const nota = Math.round(Number(fd.get("nota")));
+  const comentario = String(fd.get("comentario") ?? "").trim().slice(0, 500) || null;
+  if (!(nota >= 1 && nota <= 5)) return { erro: "Escolha de 1 a 5 estrelas." };
+  const [p] = (await sql`SELECT status FROM pedidos WHERE id = ${pedidoId} AND cliente_id = ${s.id}`) as { status: string }[];
+  if (!p) return { erro: "Pedido não encontrado." };
+  if (p.status !== "entregue") return { erro: "Você poderá avaliar assim que o pedido for entregue." };
+  const [cfg] = (await sql`SELECT valor FROM configuracoes WHERE chave = 'avaliacao_auto_publicar'`) as { valor: string }[];
+  const publicar = (cfg?.valor ?? "true") === "true" && nota >= 4 && !!comentario;
+  const r = await sql`
+    INSERT INTO avaliacoes (pedido_id, cliente_id, nota, comentario, publicada)
+    VALUES (${pedidoId}, ${s.id}, ${nota}, ${comentario}, ${publicar})
+    ON CONFLICT (pedido_id) DO NOTHING RETURNING id
+  `;
+  if (!r.length) return { erro: "Este pedido já foi avaliado." };
+  revalidatePath(`/conta/pedido/${pedidoId}`); revalidatePath("/"); revalidatePath("/admin/avaliacoes");
+  return { ok: true };
+}

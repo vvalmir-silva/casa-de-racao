@@ -5,13 +5,23 @@ import { brl } from "@/lib/utils";
 import { AdicionarBotao } from "@/components/AdicionarBotao";
 import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
 import { IconChevron } from "@/components/Icons";
+import { urlSite, jsonLd } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [p] = (await sql`SELECT nome, descricao FROM produtos WHERE slug = ${slug}`) as { nome: string; descricao: string | null }[];
-  return p ? { title: p.nome, description: p.descricao ?? undefined } : {};
+  const [p] = (await sql`SELECT nome, marca, descricao, preco_centavos, imagem_url FROM produtos WHERE slug = ${slug} AND ativo`) as { nome: string; marca: string | null; descricao: string | null; preco_centavos: number; imagem_url: string | null }[];
+  if (!p) return { title: "Produto não encontrado", robots: { index: false } };
+  const preco = (p.preco_centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const description = (p.descricao?.trim() || `${p.nome}${p.marca ? ` ${p.marca}` : ""} por ${preco}. Entrega no seu bairro com hora marcada ou retirada grátis na loja.`).slice(0, 160);
+  const img = p.imagem_url && !p.imagem_url.endsWith(".svg") ? [{ url: p.imagem_url, alt: p.nome }] : undefined;
+  return {
+    title: p.nome,
+    description,
+    alternates: { canonical: `/produto/${slug}` },
+    openGraph: { type: "website", title: `${p.nome} · ${preco}`, description, url: `/produto/${slug}`, ...(img ? { images: img } : {}) },
+  };
 }
 
 export default async function ProdutoPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -36,6 +46,27 @@ export default async function ProdutoPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="space-y-10 pb-16 md:pb-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={jsonLd({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: p.nome,
+          ...(p.marca ? { brand: { "@type": "Brand", name: p.marca } } : {}),
+          ...(p.descricao ? { description: p.descricao } : {}),
+          ...(p.imagem_url ? { image: p.imagem_url.startsWith("http") ? p.imagem_url : `${urlSite()}${p.imagem_url}` } : {}),
+          category: p.categoria,
+          ...(peso > 0 ? { weight: { "@type": "QuantitativeValue", value: peso, unitCode: "KGM" } } : {}),
+          offers: {
+            "@type": "Offer",
+            url: `${urlSite()}/produto/${p.slug}`,
+            priceCurrency: "BRL",
+            price: (p.preco_centavos / 100).toFixed(2),
+            availability: p.estoque > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            itemCondition: "https://schema.org/NewCondition",
+          },
+        })}
+      />
       <nav className="flex items-center gap-1 text-sm font-semibold text-ink-3">
         <Link href="/" className="hover:text-pine-700">Início</Link><IconChevron width={14} height={14} />
         <Link href={`/?cat=${p.cat_slug}`} className="hover:text-pine-700">{p.categoria}</Link>

@@ -75,3 +75,34 @@ test("loja monta a rota e o motorista entrega", async ({ page }) => {
   await expect(page.getByText("Entregue", { exact: true })).toBeVisible();
   await expect(page.getByText("Porteiro João")).toBeVisible();
 });
+
+test("cliente avalia a entrega e a avaliação aparece no painel e na vitrine", async ({ page }) => {
+  await entrar(page, cliente);
+  await page.goto("/conta");
+  await page.getByText(/Pedido #/).first().click();
+  await expect(page.getByText("Como foi sua compra?")).toBeVisible();
+  const enviar = page.getByRole("button", { name: "Enviar avaliação" });
+  await expect(enviar).toBeDisabled();
+  await page.getByRole("radio", { name: "5 estrelas" }).click();
+  await page.getByLabel("Conte como foi (opcional)").fill("Chegou no horário e o motorista foi muito educado.");
+  await enviar.click();
+  await expect(page.getByText("Obrigado pela avaliação!")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Sua avaliação")).toBeVisible();
+  await expect(page.getByText("Como foi sua compra?")).toHaveCount(0);
+
+  await page.goto("/");
+  await expect(page.getByText("Quem compra, recomenda")).toBeVisible();
+  await expect(page.getByText(/Chegou no horário/)).toBeVisible();
+
+  await entrar(page, ADMIN);
+  await page.goto("/admin/avaliacoes");
+  await expect(page.getByText(/Chegou no horário/)).toBeVisible();
+  await expect(page.getByRole("alert").getByText("Senha inicial em uso:")).toBeVisible();
+  await page.getByPlaceholder("Responder ao cliente (aparece no pedido dele)").fill("Obrigado! Volte sempre.");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await page.getByRole("button", { name: "Tirar da vitrine" }).click();
+  await expect(page.getByRole("button", { name: "Mostrar na vitrine" })).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByText("Quem compra, recomenda")).toHaveCount(0);
+});

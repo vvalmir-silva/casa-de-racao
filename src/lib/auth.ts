@@ -76,8 +76,14 @@ export async function autenticar(telefone: string, senha: string): Promise<Sessa
   // pgcrypto gera $2a$; bcryptjs valida normalmente
   const ok = await bcrypt.compare(senha, u.senha_hash);
   if (!ok) return null;
+  if (u.papel !== "cliente" && SENHAS_INICIAIS.includes(senha)) {
+    await sql`UPDATE usuarios SET senha_padrao = true WHERE id = ${u.id}`.catch(() => {});
+  }
   return { id: u.id, nome: u.nome, papel: u.papel, telefone: u.telefone };
 }
+
+/** Senhas do seed; enquanto estiverem em uso, o painel mostra um alerta. */
+export const SENHAS_INICIAIS = ["admin123", "moto123"];
 
 export async function hashSenha(senha: string) {
   return bcrypt.hash(senha, 10);

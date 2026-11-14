@@ -128,7 +128,7 @@ export async function notificarPedido(pedidoId: string, evento: Exclude<TipoNoti
       texto = `🚗 Seu pedido #${p.numero} saiu para entrega, ${nome}!${p.inicio ? ` Previsão: ${hm(p.inicio)}–${hm(p.fim)}.` : ""}${p.forma_pagamento !== "pix" ? ` Pagamento na entrega: ${brl(p.total_centavos)}.` : ""}`;
       break;
     case "entregue":
-      texto = `Pedido #${p.numero} entregue ✅ Obrigado pela compra, ${nome}! Qualquer coisa, é só chamar aqui. 🐾`;
+      texto = `Pedido #${p.numero} entregue ✅ Obrigado pela compra, ${nome}! 🐾${link ? `\nConta pra gente como foi (leva 10 segundos):\n${link}#avaliar` : ""}`;
       break;
     case "cancelado":
       texto = `Seu pedido #${p.numero} foi cancelado. Se não foi você, fale com a gente por aqui.`;

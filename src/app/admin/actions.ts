@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { exigirSessao, hashSenha, normalizarTelefone } from "@/lib/auth";
+import { exigirSessao, hashSenha, normalizarTelefone, SENHAS_INICIAIS } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { comTransacao } from "@/lib/pool";
 import { cancelarPedido, ErroPedido } from "@/lib/pedidos";
@@ -260,6 +260,7 @@ export async function excluirJanela(id: number): Promise<R> {
 
 /* ---------- Configurações ---------- */
 const chavesPermitidas = new Set([
+  "avaliacao_auto_publicar",
   "loja_nome","loja_endereco","loja_cep","loja_whatsapp","pix_chave","frete_gratis_minimo_centavos","peso_extra_limite_kg",
   "peso_extra_taxa_centavos","peso_extra_bloco_kg","expresso_ativo","expresso_taxa_centavos","expresso_peso_max_kg","expresso_prazo_horas","retirada_prazo_horas",
   "recompra_dias_antes","whatsapp_notificacoes","pix_expiracao_minutos","loja_lat","loja_lng","comprovante_obrigatorio",
@@ -271,13 +272,14 @@ export async function salvarConfig(fd: FormData): Promise<R> {
     if (!chavesPermitidas.has(k)) continue;
     let val = String(v).trim();
     if (k.endsWith("_centavos")) val = String(Math.round(Number(val.replace(",", ".")) * 100));
-    if (k === "expresso_ativo" || k === "whatsapp_notificacoes" || k === "comprovante_obrigatorio") val = val === "on" ? "true" : "false";
+    if (k === "expresso_ativo" || k === "whatsapp_notificacoes" || k === "comprovante_obrigatorio" || k === "avaliacao_auto_publicar") val = val === "on" ? "true" : "false";
     if (k === "loja_lat" || k === "loja_lng") val = val.replace(",", ".");
     await sql`INSERT INTO configuracoes (chave, valor) VALUES (${k}, ${val}) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor`;
   }
   if (!fd.has("expresso_ativo")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'expresso_ativo'`;
   if (!fd.has("whatsapp_notificacoes")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'whatsapp_notificacoes'`;
   if (!fd.has("comprovante_obrigatorio")) await sql`UPDATE configuracoes SET valor = 'false' WHERE chave = 'comprovante_obrigatorio'`;
+  if (!fd.has("avaliacao_auto_publicar")) await sql`INSERT INTO configuracoes (chave, valor) VALUES ('avaliacao_auto_publicar', 'false') ON CONFLICT (chave) DO UPDATE SET valor = 'false'`;
   // endereço da loja mudou → recalcula coordenadas na próxima otimização
   if (fd.has("loja_endereco") && !String(fd.get("loja_lat") ?? "").trim()) await sql`UPDATE configuracoes SET valor = '' WHERE chave IN ('loja_lat','loja_lng')`;
   revalidatePath("/admin/config"); revalidatePath("/");
@@ -297,7 +299,7 @@ export async function salvarUsuario(fd: FormData): Promise<R> {
   if (!["cliente","admin","motorista"].includes(papel)) return { erro: "Papel inválido" };
   if (id) {
     await sql`UPDATE usuarios SET nome=${nome}, telefone=${telefone}, papel=${papel}, ativo=${ativo} WHERE id=${id}`;
-    if (senha) await sql`UPDATE usuarios SET senha_hash=${await hashSenha(senha)} WHERE id=${id}`;
+    if (senha) await sql`UPDATE usuarios SET senha_hash=${await hashSenha(senha)}, senha_padrao=${SENHAS_INICIAIS.includes(senha)} WHERE id=${id}`;
   } else {
     if (senha.length < 6) return { erro: "Senha com pelo menos 6 caracteres" };
     const ex = await sql`SELECT 1 FROM usuarios WHERE telefone = ${telefone}`;
@@ -353,5 +355,22 @@ export async function alternarCupom(id: number, ativo: boolean): Promise<R> {
   await exigirSessao(["admin"]);
   await sql`UPDATE cupons SET ativo = ${ativo} WHERE id = ${id}`;
   revalidatePath("/admin/cupons");
+  return { ok: true };
+}
+
+/* ---------- Avaliações ---------- */
+export async function publicarAvaliacao(id: number, publicada: boolean): Promise<R> {
+  await exigirSessao(["admin"]);
+  await sql`UPDATE avaliacoes SET publicada = ${publicada} WHERE id = ${id}`;
+  revalidatePath("/admin/avaliacoes"); revalidatePath("/");
+  return { ok: true };
+}
+
+export async function responderAvaliacao(fd: FormData): Promise<R> {
+  await exigirSessao(["admin"]);
+  const id = Number(fd.get("id"));
+  const resposta = String(fd.get("resposta") ?? "").trim().slice(0, 500) || null;
+  await sql`UPDATE avaliacoes SET resposta = ${resposta} WHERE id = ${id}`;
+  revalidatePath("/admin/avaliacoes"); revalidatePath("/");
   return { ok: true };
 }

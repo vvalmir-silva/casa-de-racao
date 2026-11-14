@@ -15,7 +15,9 @@ export default async function AdminHome() {
       (SELECT coalesce(sum(total_centavos),0) FROM pedidos WHERE status <> 'cancelado' AND criado_em::date = ${hoje}::date) AS vendas_hoje,
       (SELECT coalesce(sum(total_centavos),0) FROM pedidos WHERE status <> 'cancelado' AND criado_em >= date_trunc('month', now())) AS vendas_mes,
       (SELECT count(*) FROM produtos WHERE ativo AND estoque <= 3) AS baixo_estoque,
-      (SELECT count(*) FROM assinaturas WHERE ativa) AS assinaturas
+      (SELECT count(*) FROM assinaturas WHERE ativa) AS assinaturas,
+      (SELECT round(avg(nota)::numeric, 1) FROM avaliacoes) AS nota_media,
+      (SELECT count(*) FROM avaliacoes WHERE nota <= 3 AND criado_em > now() - interval '7 days') AS notas_baixas
   `) as Record<string, string>[];
   const cards = [
     ["Aguardando PIX", r.aguardando, "/admin/pedidos?status=aguardando_pagamento"],
@@ -24,6 +26,8 @@ export default async function AdminHome() {
     ["Vendas no mês", brl(Number(r.vendas_mes)), "/admin/pedidos"],
     ["Estoque baixo", r.baixo_estoque, "/admin/produtos?baixo=1"],
     ["Assinaturas ativas", r.assinaturas, "/admin/pedidos"],
+    ["Nota dos clientes", r.nota_media ? `${String(r.nota_media).replace(".", ",")} ★` : "—", "/admin/avaliacoes"],
+    ["Notas baixas (7 dias)", r.notas_baixas, "/admin/avaliacoes?nota=baixa"],
   ];
   return (
     <div>

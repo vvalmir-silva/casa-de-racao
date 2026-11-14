@@ -11,6 +11,7 @@ const itens: [string, string, string][] = [
   ["/admin/relatorios", "Relatórios", "📈"],
   ["/admin/entregas", "Zonas e janelas", "📍"],
   ["/admin/cupons", "Cupons", "🎟️"],
+  ["/admin/avaliacoes", "Avaliações", "⭐"],
   ["/admin/usuarios", "Usuários", "👥"],
   ["/admin/notificacoes", "Notificações", "💬"],
   ["/admin/config", "Configurações", "⚙️"],

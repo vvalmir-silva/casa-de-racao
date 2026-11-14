@@ -53,7 +53,7 @@ export async function redefinirSenhaAction(_: EstadoRecuperar | undefined, fd: F
   if (r === "bloqueado") return { etapa: "codigo", telefone: tel, erro: "Muitas tentativas erradas. Peça um novo código." };
   if (r !== "ok") return { etapa: "codigo", telefone: tel, erro: "Código inválido." };
 
-  await sql`UPDATE usuarios SET senha_hash = ${await hashSenha(senha)} WHERE id = ${u.id}`;
+  await sql`UPDATE usuarios SET senha_hash = ${await hashSenha(senha)}, senha_padrao = false WHERE id = ${u.id}`;
   await criarSessao({ id: u.id, nome: u.nome, papel: u.papel, telefone: u.telefone });
   redirect(u.papel === "admin" ? "/admin" : u.papel === "motorista" ? "/motorista" : "/conta?senha=1");
 }

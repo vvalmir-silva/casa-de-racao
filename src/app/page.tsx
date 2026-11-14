@@ -1,10 +1,24 @@
 import Link from "next/link";
-import { sql } from "@/lib/db";
+import { sql, getConfig } from "@/lib/db";
 import { ProdutoCard, type ProdutoResumo } from "@/components/ProdutoCard";
 import { Banners } from "@/components/Vitrine";
 import { IconChevron } from "@/components/Icons";
+import { urlSite, jsonLd } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
+  const { cat, q } = await searchParams;
+  if (q) return { title: `Busca: ${q}`, robots: { index: false, follow: true } };
+  if (!cat) return {};
+  const [c] = (await sql`SELECT nome FROM categorias WHERE slug = ${cat}`) as { nome: string }[];
+  if (!c) return { robots: { index: false } };
+  return {
+    title: c.nome,
+    description: `${c.nome} com entrega no seu bairro. Compre online e receba com hora marcada ou retire grátis na loja.`,
+    alternates: { canonical: `/?cat=${cat}` },
+  };
+}
 
 type Categoria = { id: number; nome: string; slug: string; especie: string; qtd: number };
 type Prod = ProdutoResumo & { categoria_slug: string; destaque: boolean };
@@ -34,8 +48,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       AND (${busca}::text IS NULL OR p.nome ILIKE ${busca} OR p.marca ILIKE ${busca})
     ORDER BY p.destaque DESC, p.estoque = 0, p.nome
   `) as Prod[];
-  const atual = categorias.find((c) => c.slug === cat);
   const filtrando = !!(cat || q);
+  const depoimentos = filtrando ? [] : ((await sql`
+    SELECT a.id, split_part(u.nome, ' ', 1) AS nome, a.nota, a.comentario, a.resposta
+    FROM avaliacoes a JOIN usuarios u ON u.id = a.cliente_id
+    WHERE a.publicada AND a.comentario IS NOT NULL
+    ORDER BY a.criado_em DESC LIMIT 6
+  `) as { id: number; nome: string; nota: number; comentario: string; resposta: string | null }[]);
+  const [notaGeral] = filtrando ? [] : ((await sql`SELECT count(*)::int AS n, round(avg(nota)::numeric, 1)::float AS media FROM avaliacoes`) as { n: number; media: number | null }[]);
+  const atual = categorias.find((c) => c.slug === cat);
 
   const Categorias = () => (
     <nav aria-label="Categorias" className="no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 lg:mx-0 lg:gap-4 lg:px-0">
@@ -100,12 +121,50 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     </section>
   );
 
+  const cfg = await getConfig();
+  const loja = {
+    "@context": "https://schema.org",
+    "@type": "PetStore",
+    name: cfg.loja_nome || "Casa de Ração",
+    url: urlSite(),
+    image: `${urlSite()}/icons/icon-512.png`,
+    description: "Ração para cães, gatos e aves com entrega no bairro, retirada grátis e pagamento por PIX, cartão ou dinheiro.",
+    priceRange: "$$",
+    paymentAccepted: "PIX, Cartão, Dinheiro",
+    currenciesAccepted: "BRL",
+    ...(cfg.loja_whatsapp ? { telephone: `+${cfg.loja_whatsapp.replace(/\D/g, "")}` } : {}),
+    ...(cfg.loja_endereco ? { address: { "@type": "PostalAddress", streetAddress: cfg.loja_endereco, ...(cfg.loja_cep ? { postalCode: cfg.loja_cep } : {}), addressCountry: "BR" } } : {}),
+    ...(cfg.loja_lat && cfg.loja_lng ? { geo: { "@type": "GeoCoordinates", latitude: Number(cfg.loja_lat), longitude: Number(cfg.loja_lng) } } : {}),
+    ...(notaGeral?.media && notaGeral.n >= 3 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: notaGeral.media, reviewCount: notaGeral.n, bestRating: 5 } } : {}),
+  };
+
   return (
     <div className="space-y-8 sm:space-y-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(loja)} />
       <Banners />
       <Categorias />
       <Carrossel titulo="Mais pedidos no bairro" itens={produtos} />
       {secoes.map(({ c, itens }) => <Carrossel key={c.id} titulo={c.nome} href={`/?cat=${c.slug}`} itens={itens} />)}
+      {depoimentos.length > 0 && (
+        <section aria-labelledby="depoimentos">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h2 id="depoimentos" className="text-xl font-extrabold tracking-tight sm:text-2xl">Quem compra, recomenda</h2>
+            {notaGeral?.media && notaGeral.n >= 3 && (
+              <span className="text-sm font-bold text-ink-2"><span className="text-kibble-500">★</span> {String(notaGeral.media).replace(".", ",")} · {notaGeral.n} avaliações</span>
+            )}
+          </div>
+          <div className="no-scrollbar snap-x-row -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0">
+            {depoimentos.map((d) => (
+              <figure key={d.id} className="w-[78%] shrink-0 rounded-[22px] bg-white p-5 sm:w-[46%] lg:w-auto">
+                <div className="text-kibble-500" aria-label={`${d.nota} de 5 estrelas`}>{"★".repeat(d.nota)}</div>
+                <blockquote className="mt-2 text-[15px] leading-relaxed text-ink">“{d.comentario}”</blockquote>
+                <figcaption className="mt-3 text-sm font-bold text-ink-2">{d.nome}</figcaption>
+                {d.resposta && <p className="mt-2 rounded-xl bg-pine-50 p-2.5 text-xs text-pine-800"><b>Loja:</b> {d.resposta}</p>}
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="grid gap-3 rounded-[28px] bg-white p-5 sm:grid-cols-3 sm:p-6">
         {[
           ["Entrega com hora marcada", "Janelas por bairro. Você sabe quando chega."],

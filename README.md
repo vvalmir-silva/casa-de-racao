@@ -50,10 +50,18 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda tipos, unitários, build e E2
 | Rota otimizada | `GOOGLE_MAPS_API_KEY` (opcional, mais preciso). Sem chave usa OpenStreetMap (Nominatim + OSRM), grátis | Ordem por distância estimada ou por CEP |
 | Recuperar senha | Usa o WhatsApp configurado | Tela orienta a falar com a loja; admin troca a senha em Usuários |
 | Upload de fotos de produto | `BLOB_READ_WRITE_TOKEN` (Vercel Blob, criado automaticamente ao conectar o store) | Só URL da imagem |
+| Monitoramento de erros | `NEXT_PUBLIC_SENTRY_DSN` (Sentry, projeto `casa-de-racao`). Opcional: `SENTRY_AUTH_TOKEN` para enviar source maps | Erros só nos logs da Vercel |
+| Visitas e velocidade | Ative *Web Analytics* e *Speed Insights* no painel do projeto na Vercel (o código já está pronto) | Nada é coletado |
 
 **Migrações:** novas alterações de banco ficam em `db/migrations/*.sql`. Aplique com `npm run db:migrate` ou acessando `/api/admin/migrar` logado como admin.
 
 **Crons (vercel.json):** `/api/cron/assinaturas` (06h BRT) e `/api/cron/recompra` (10h BRT).
+
+## Avaliações e SEO
+
+- **Avaliação pós-entrega:** ao marcar "entregue", o WhatsApp leva o link `…/conta/pedido/ID#avaliar`. O cliente dá de 1 a 5 estrelas e comenta. Notas 4–5 com comentário vão para a página inicial ("Quem compra, recomenda"), salvo se desligado em Configurações. **Admin → Avaliações:** média, notas baixas, responder, tirar ou pôr na vitrine.
+- **SEO:** `/sitemap.xml`, `/robots.txt` (painel, conta e checkout fora do Google), título e descrição por produto e categoria, imagem de compartilhamento (`/opengraph-image`) e dados estruturados (`PetStore` com nota média, `Product` com preço e estoque).
+- **Senha inicial:** enquanto `admin123`/`moto123` estiverem em uso, o painel mostra um alerta vermelho.
 
 ## Cupons e relatórios
 
